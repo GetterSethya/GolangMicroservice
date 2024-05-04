@@ -25,6 +25,8 @@ type AppImage struct {
 	Original  string `json:"original"`
 }
 
+const PORT = ":3001"
+
 func main() {
 	router := mux.NewRouter().PathPrefix("/v1/image").Subrouter()
 	router.HandleFunc("/", library.CreateHandler(handleCreateImage)).Methods(http.MethodPost)
@@ -32,7 +34,7 @@ func main() {
 	router.HandleFunc("/thumbnail/{filename}", library.CreateHandler(handleGetThumbnailImage)).Methods(http.MethodGet)
 
 	log.Println("Image service is running on port: 3001")
-	log.Fatal(http.ListenAndServe(":3001", router))
+	log.Fatal(http.ListenAndServe(PORT, router))
 }
 
 func handleGetOriImage(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -159,9 +161,10 @@ func handleCreateImage(w http.ResponseWriter, r *http.Request) (int, error) {
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
 
+
 	data := AppImage{
-		Thumbnail: "http://localhost:3001/v1/image/thumbnail/" + stamp,
-		Original:  "http://localhost:3001/v1/image/original/" + stamp,
+		Thumbnail: "http://localhost/v1/image/thumbnail/" + stamp,
+		Original:  "http://localhost/v1/image/original/" + stamp,
 	}
 
 	resp := library.NewResp("Image created", data)

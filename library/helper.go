@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 type AppHandler func(w http.ResponseWriter, r *http.Request) (int, error)
 
 func CreateHandler(f AppHandler) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		instance := os.Getenv("instace")
+		log.Println("instace", instance)
 		status, err := f(w, r)
 		if err != nil {
 			log.Println("Error:", err.Error())
