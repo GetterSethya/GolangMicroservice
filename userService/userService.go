@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/GetterSethya/library"
@@ -82,6 +83,7 @@ func (s *UserService) handleGetUserByUsername(w http.ResponseWriter, r *http.Req
 
 	err := s.Store.GetUserByUsername(username, user)
 	if err != nil {
+		log.Println("Error when getting user by username", err)
 		return http.StatusNotFound, fmt.Errorf("User did not exists/not found")
 	}
 
@@ -205,6 +207,9 @@ func (s *UserService) handleCreateUser(w http.ResponseWriter, r *http.Request) (
 		unixEpoch,
 	); err != nil {
 		log.Println("Error when inserting user:", err)
+		if strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
+			return http.StatusBadRequest, fmt.Errorf("Username already used")
+		}
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
 

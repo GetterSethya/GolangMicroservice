@@ -7,9 +7,9 @@ type User struct {
 	HashPassword string `json:"hashPassword"`
 	Profile      string `json:"profile"`
 
-	CreatedAt int64 `json:"createdAt"`
-	UpdatedAt int64 `json:"updatedAt"`
-	DeletedAt int64 `json:"deletedAt"`
+	CreatedAt int64       `json:"createdAt"`
+	UpdatedAt int64       `json:"updatedAt"`
+	DeletedAt interface{} `json:"deletedAt"`
 }
 
 type ReturnUser struct {
@@ -19,7 +19,7 @@ type ReturnUser struct {
 	HashPassword string `json:"-"`
 	Profile      string `json:"profile"`
 
-	CreatedAt int64 `json:"createdAt"`
-	UpdatedAt int64 `json:"updatedAt"`
-	DeletedAt int64 `json:"deletedAt"`
+	CreatedAt int64       `json:"createdAt"`
+	UpdatedAt int64       `json:"updatedAt"`
+	DeletedAt interface{} `json:"-"`
 }

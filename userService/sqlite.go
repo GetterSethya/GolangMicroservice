@@ -169,8 +169,8 @@ func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) err
         hashPassword,
         profile,
         createdAt,
-        deletedAt 
-        FROM users WHERE username = ?`)
+        updatedAt 
+        FROM users WHERE username = ? AND deletedAt IS NULL`)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) err
 		&user.HashPassword,
 		&user.Profile,
 		&user.CreatedAt,
-		&user.DeletedAt,
+		&user.UpdatedAt,
 	); err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func (s *SqliteStorage) GetUserById(id string, user *ReturnUser) error {
         hashPassword,
         profile,
         createdAt,
-        deletedAt 
+        updatedAt
         FROM users WHERE id = ?`)
 	if err != nil {
 		return err
@@ -217,7 +217,7 @@ func (s *SqliteStorage) GetUserById(id string, user *ReturnUser) error {
 		&user.HashPassword,
 		&user.Profile,
 		&user.CreatedAt,
-		&user.DeletedAt,
+		&user.UpdatedAt,
 	); err != nil {
 		return err
 	}
