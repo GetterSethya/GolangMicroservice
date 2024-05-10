@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package library;
+option go_package = "github.com/GetterSethya/library";
+
+message UserResp{
+    string id = 1;
+    string username = 2;
+    string name = 3;
+    string profile = 4;
+    int64 createdAt = 5;
+    int64 updatedAt = 6;
+    google.protobuf.Any deletedAt = 7;
+}
+
+message UserPasswordResp{
+    string id = 1;
+    string hashPassword = 2;
+    int64 createdAt = 3;
+    int64 updatedAt = 4;
+    google.protobuf.Any deletedAt = 5;
+}
+
+message GetUserByIdReq {
+    string id = 1;
+}
+
+message GetUserByUsernameReq {
+    string username = 1;
+}
+
+message CreateUserReq {
+    string id = 1;
+    string username = 2;
+    string name = 3;
+    string hashPassword = 4;
+}
+
+message CreateUserResp{
+    string message = 1;
+}
+
+service User {
+    rpc GetUserById(GetUserByIdReq) returns (UserResp){}
+    rpc GetUserByUsername(GetUserByUsernameReq) returns (UserResp){}
+    rpc CreateUser(CreateUserReq) returns (CreateUserResp){}
+    rpc GetUserPasswordById(GetUserByIdReq) returns (UserPasswordResp){}
+    rpc GetUserPasswordByUsername(GetUserByUsernameReq) returns (UserPasswordResp){}
+}
