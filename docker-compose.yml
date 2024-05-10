@@ -11,6 +11,12 @@ services:
       - image_service1
       - image_service2
 
+      - user_service1
+      - user_service2
+
+      - auth_service1
+      - auth_service2
+
   image_service1:
     build:
       context: .
@@ -19,6 +25,8 @@ services:
       - imageservice:/app/data
     environment:
       instance: 1
+      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
+      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
 
   image_service2:
     build:
@@ -28,5 +36,55 @@ services:
       - imageservice:/app/data
     environment:
       instance: 2
+      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
+      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+
+  user_service1:
+    build:
+      context: .
+      dockerfile: /userService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 1
+      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
+      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+
+  user_service2:
+    build:
+      context: .
+      dockerfile: /userService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 2
+      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
+      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+
+  auth_service1:
+    build:
+      context: .
+      dockerfile: /authService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 1
+      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
+      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      USER_SERVICE_HOSTNAME: "user_service"
+
+  auth_service2:
+    build:
+      context: .
+      dockerfile: /authService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 2
+      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
+      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      USER_SERVICE_HOSTNAME: "user_service"
+
 volumes:
   imageservice:
+  dbStore:
