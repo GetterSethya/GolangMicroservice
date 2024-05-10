@@ -7,6 +7,7 @@ COPY library/ /app/library/
 COPY imageService/ .
 
 RUN go mod edit -replace=github.com/GetterSethya/library=/app/library
+RUN go mod tidy
 RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o myapp .
