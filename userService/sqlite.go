@@ -94,6 +94,61 @@ func (s *SqliteStorage) CreateUser(id, username, name, hashPassword, profile str
 	return nil
 }
 
+func (s *SqliteStorage) GetUserPasswordByUsername(username string, user *User) error {
+
+	stmt, err := s.db.Prepare(`
+        SELECT 
+        id,
+        username,
+        hashPassword,
+        createdAt,
+        updatedAt 
+        FROM users WHERE username = ? AND deletedAt IS NULL`)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if err := stmt.QueryRow(username).Scan(
+		&user.Id,
+		&user.Username,
+		&user.HashPassword,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SqliteStorage) GetUserPasswordById(id string, user *User) error {
+
+	stmt, err := s.db.Prepare(`
+        SELECT 
+        id,
+        hashPassword,
+        createdAt,
+        updatedAt 
+        FROM users WHERE id = ? AND deletedAt IS NULL`)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if err := stmt.QueryRow(id).Scan(
+		&user.Id,
+		&user.HashPassword,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *SqliteStorage) UpdateUserPasswordById(newPassword, id string) error {
 
 	stmt, err := s.db.Prepare(`
@@ -166,7 +221,6 @@ func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) err
         id,
         username,
         name,
-        hashPassword,
         profile,
         createdAt,
         updatedAt 
@@ -181,7 +235,6 @@ func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) err
 		&user.Id,
 		&user.Username,
 		&user.Name,
-		&user.HashPassword,
 		&user.Profile,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -199,7 +252,6 @@ func (s *SqliteStorage) GetUserById(id string, user *ReturnUser) error {
         id,
         username,
         name,
-        hashPassword,
         profile,
         createdAt,
         updatedAt
@@ -214,7 +266,6 @@ func (s *SqliteStorage) GetUserById(id string, user *ReturnUser) error {
 		&user.Id,
 		&user.Username,
 		&user.Name,
-		&user.HashPassword,
 		&user.Profile,
 		&user.CreatedAt,
 		&user.UpdatedAt,

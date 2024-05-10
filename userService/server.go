@@ -12,6 +12,7 @@ type Server struct {
 	Store      *SqliteStorage
 }
 
+
 func NewServer(listenAddr string, store *SqliteStorage) *Server {
 	return &Server{
 		ListenAddr: listenAddr,
