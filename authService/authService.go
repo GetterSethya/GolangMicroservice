@@ -21,6 +21,12 @@ type AuthService struct {
 	GrpcClient    library.UserClient
 }
 
+type tokenChan struct {
+	token     string
+	err       error
+	tokenType string
+}
+
 func NewAuthService(jwtSecret string, grpcClient library.UserClient, refreshSecret string) *AuthService {
 
 	return &AuthService{
@@ -97,6 +103,9 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 
 func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (int, error) {
 
+	ch := make(chan tokenChan)
+	defer close(ch)
+
 	log.Println("hit handle register auth")
 
 	body, err := io.ReadAll(r.Body)
@@ -133,8 +142,41 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	}
 
 	// generate jwt token, refresh token
-	jwtToken, err := library.CreateJWT(userDb.Id, s.JWTSecret, time.Now().Add(6*time.Hour))
-	refreshToken, err := library.CreateJWT(userDb.Id, s.RefreshSecret, time.Now().Add(24*time.Hour))
+	go func() {
+		jwtToken, err := library.CreateJWT(userDb.Id, s.JWTSecret, time.Now().Add(6*time.Hour))
+		ch <- tokenChan{token: jwtToken, err: err, tokenType: "access"}
+	}()
+
+	go func() {
+		refreshToken, err := library.CreateJWT(userDb.Id, s.RefreshSecret, time.Now().Add(24*time.Hour))
+		ch <- tokenChan{token: refreshToken, err: err, tokenType: "refresh"}
+	}()
+
+	var jwtToken string
+	var refreshToken string
+	var errs []error
+
+	for i := 0; i < 2; i++ {
+		res := <-ch
+		if res.err != nil {
+			errs = append(errs, res.err)
+			continue
+		}
+		if res.tokenType == "access" {
+			jwtToken = res.token
+		} else {
+			refreshToken = res.token
+		}
+
+	}
+
+	if len(errs) > 0 {
+		log.Println("Error when generating jwt access and refresh token:")
+		for _, err := range errs {
+			log.Println(err)
+		}
+		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+	}
 
 	library.WriteJson(w, http.StatusOK, map[string]interface{}{"accessToken": jwtToken, "refreshToken": refreshToken})
 
@@ -142,6 +184,7 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 }
 
 func (s *AuthService) handleRefreshAuth(w http.ResponseWriter, r *http.Request) (int, error) {
+	ch := make(chan tokenChan)
 
 	///////////////////////////
 	//TODO handleRefreshAuth//
@@ -170,9 +213,42 @@ func (s *AuthService) handleRefreshAuth(w http.ResponseWriter, r *http.Request) 
 
 	userId := token.Claims.(jwt.MapClaims)["sub"].(string)
 
-	// generate refresh and access token
-	jwtToken, err := library.CreateJWT(userId, s.JWTSecret, time.Now().Add(6*time.Hour))
-	refreshToken, err := library.CreateJWT(userId, s.RefreshSecret, time.Now().Add(24*time.Hour))
+	// generate jwt token, refresh token
+	go func() {
+		jwtToken, err := library.CreateJWT(userId, s.JWTSecret, time.Now().Add(6*time.Hour))
+		ch <- tokenChan{token: jwtToken, err: err, tokenType: "access"}
+	}()
+
+	go func() {
+		refreshToken, err := library.CreateJWT(userId, s.RefreshSecret, time.Now().Add(24*time.Hour))
+		ch <- tokenChan{token: refreshToken, err: err, tokenType: "refresh"}
+	}()
+
+	var jwtToken string
+	var refreshToken string
+	var errs []error
+
+	for i := 0; i < 2; i++ {
+		res := <-ch
+		if res.err != nil {
+			errs = append(errs, res.err)
+			continue
+		}
+		if res.tokenType == "access" {
+			jwtToken = res.token
+		} else {
+			refreshToken = res.token
+		}
+
+	}
+
+	if len(errs) > 0 {
+		log.Println("Error when generating jwt access and refresh token:")
+		for _, err := range errs {
+			log.Println(err)
+		}
+		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+	}
 
 	library.WriteJson(w, http.StatusOK, map[string]interface{}{"accessToken": jwtToken, "refreshToken": refreshToken})
 
