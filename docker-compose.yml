@@ -25,8 +25,8 @@ services:
       - imageservice:/app/data
     environment:
       instance: 1
-      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
-      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
 
   image_service2:
     build:
@@ -36,8 +36,8 @@ services:
       - imageservice:/app/data
     environment:
       instance: 2
-      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
-      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
 
   user_service1:
     build:
@@ -47,8 +47,8 @@ services:
       - dbStore:/app/data
     environment:
       instance: 1
-      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
-      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
 
   user_service2:
     build:
@@ -58,8 +58,8 @@ services:
       - dbStore:/app/data
     environment:
       instance: 2
-      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
-      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
 
   auth_service1:
     build:
@@ -69,8 +69,8 @@ services:
       - dbStore:/app/data
     environment:
       instance: 1
-      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
-      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
       USER_SERVICE_HOSTNAME: "user_service"
 
   auth_service2:
@@ -81,8 +81,8 @@ services:
       - dbStore:/app/data
     environment:
       instance: 2
-      JWT_SECRET: asoidjhaosijdeifaolejfnojefa
-      REFRESH_SECRET: asiudfhnasioljfniaedhfoadl
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
       USER_SERVICE_HOSTNAME: "user_service"
 
 volumes:
