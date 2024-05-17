@@ -134,7 +134,7 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	userDb, err := s.GrpcClient.GetUserPasswordByUsername(r.Context(), in)
 	if err != nil {
 		log.Println("Error when calling GetUserByUsername:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusBadRequest, fmt.Errorf("Username/password wrong")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(userDb.HashPassword), []byte(user.Password)); err != nil {
