@@ -109,8 +109,15 @@ func (s *UserService) handleGetUserByUsername(w http.ResponseWriter, r *http.Req
 }
 
 func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Request) (int, error) {
+	type changePassReq struct {
+		CurrentPassword    string
+		NewPassword        string
+		ConfirmNewPassword string
+	}
 
 	log.Println("hit handle update user password")
+
+	userIdJWT := library.GetUserIdFromJWT(r)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -119,19 +126,21 @@ func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 
 	defer r.Body.Close()
 
-	user := &User{}
+	changePass := &changePassReq{}
 
-	if err := json.Unmarshal(body, &user); err != nil {
+	if err := json.Unmarshal(body, &changePass); err != nil {
 		log.Println("Error when umarshaling json", err)
 		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
 	}
 
-	userIdJWT := library.GetUserIdFromJWT(r)
+	if changePass.NewPassword != changePass.ConfirmNewPassword {
+		return http.StatusBadRequest, fmt.Errorf("New password didnot match with confirm new password")
+	}
 
 	/////////////////////////////
 	//TODO validasi input user//
 	///////////////////////////
-	newPassword, err := bcrypt.GenerateFromPassword([]byte(user.HashPassword), 12)
+	newPassword, err := bcrypt.GenerateFromPassword([]byte(changePass.NewPassword), 12)
 	if err != nil {
 		log.Println("Error when hashing password:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
@@ -142,7 +151,7 @@ func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
 
-	resp := library.NewResp("User updated!", nil)
+	resp := library.NewResp("User password updated!", nil)
 
 	library.WriteJson(w, http.StatusOK, resp)
 
