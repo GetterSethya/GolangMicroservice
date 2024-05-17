@@ -17,6 +17,9 @@ services:
       - auth_service1
       - auth_service2
 
+      - post_service1
+      - post_service2
+
   image_service1:
     build:
       context: .
@@ -77,6 +80,30 @@ services:
     build:
       context: .
       dockerfile: /authService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 2
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
+      USER_SERVICE_HOSTNAME: "user_service"
+
+  post_service1:
+    build:
+      context: .
+      dockerfile: /postService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 1
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
+      USER_SERVICE_HOSTNAME: "user_service"
+
+  post_service2:
+    build:
+      context: .
+      dockerfile: /postService/Dockerfile
     volumes:
       - dbStore:/app/data
     environment:
