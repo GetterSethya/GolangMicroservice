@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,9 +45,26 @@ func (s *UserService) RegisterRoutes(r *mux.Router) {
 
 func (s *UserService) handleDeleteUserById(w http.ResponseWriter, r *http.Request) (int, error) {
 	log.Println("hit handle delete user by id")
-	//////////////////////////////
-	//TODO handleDeleteUserById//
-	////////////////////////////
+
+	vars := mux.Vars(r)
+	urlIdUser := vars["id"]
+	idUser := library.GetUserIdFromJWT(r)
+
+	if urlIdUser != idUser {
+		return http.StatusUnauthorized, fmt.Errorf("Unauthorized")
+	}
+
+	if err := s.Store.DeleteUserById(idUser); err != nil {
+		if err == sql.ErrNoRows {
+			return http.StatusNotFound, fmt.Errorf("User didnot exists")
+		}
+
+		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+	}
+
+	resp := library.NewResp("User deleted!", nil)
+
+	library.WriteJson(w, http.StatusOK, resp)
 
 	return http.StatusOK, nil
 }
