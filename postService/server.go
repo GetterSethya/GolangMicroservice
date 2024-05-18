@@ -27,6 +27,6 @@ func (s *Server) Run(grpcClient library.UserClient) {
 	userService := NewUserService(s.Store, grpcClient)
 	userService.RegisterRoutes(routes)
 
-	log.Println("userService is running on port:", PORT)
+	log.Println("postService is running on port:", PORT)
 	log.Fatal(http.ListenAndServe(s.ListenAddr, routes))
 }
