@@ -1,6 +1,7 @@
 #Build
-FROM golang:latest AS build
+FROM alpine:edge AS build
 
+RUN apk add --no-cache --update go gcc g++
 WORKDIR /app
 
 COPY library/ /app/library/
@@ -13,7 +14,7 @@ RUN go mod download
 RUN CGO_ENABLED=1 GOOS=linux go build -o myapp .
 
 #Final
-FROM debian:latest
+FROM alpine:edge
 
 WORKDIR /app
 
