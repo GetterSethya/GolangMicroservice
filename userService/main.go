@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 )
 
@@ -15,6 +16,10 @@ const RABBITMQPORT = ":5672"
 
 func main() {
 
+	var wg sync.WaitGroup
+
+	cfg := InitConfig()
+
 	sqliteStorage := NewSqliteStorage()
 	sqliteStorage.Init()
 
@@ -24,16 +29,20 @@ func main() {
 	sqliteStorage.db.SetConnMaxLifetime(5 * time.Minute)
 
 	//gRPC server :4002
+	wg.Add(1)
 	go func() {
 		server := NewGrpcServer(GRPCPORT, sqliteStorage)
 		server.RunGrpc()
+		defer wg.Done()
 	}()
 
 	//http server :3002
+	wg.Add(1)
 	go func() {
-		server := NewServer(PORT, sqliteStorage)
+		server := NewServer(PORT, sqliteStorage, cfg)
 		server.Run()
+		defer wg.Done()
 	}()
 
-	select {}
+	wg.Wait()
 }

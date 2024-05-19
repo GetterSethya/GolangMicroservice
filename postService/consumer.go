@@ -85,6 +85,7 @@ func (c *Consumer) Consume(rabbitMQHostname string) {
 	go func() {
 		for d := range msgs {
 			//update data user
+			log.Println("New event receive:", string(d.Body))
 			c.handleUpdateName(d.Body)
 		}
 		defer wg.Done()

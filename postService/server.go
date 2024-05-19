@@ -1,29 +1,42 @@
 package main
 
 import (
+	"google.golang.org/grpc/resolver"
 	"log"
 	"net/http"
 
 	"github.com/GetterSethya/library"
 	"github.com/gorilla/mux"
-	"google.golang.org/grpc"
 )
 
 type Server struct {
 	ListenAddr string
 	Store      *SqliteStorage
+	Cfg        AppConfig
 }
 
-func NewServer(listenAddr string, store *SqliteStorage) *Server {
+func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *Server {
 	return &Server{
 		ListenAddr: listenAddr,
 		Store:      store,
+		Cfg:        cfg,
 	}
 }
 
-func (s *Server) Run(grpcClient *grpc.ClientConn) {
+func (s *Server) Run() {
 
-	c := library.NewUserClient(grpcClient)
+	rb := &exampleResolverBuilder{
+		UserServiceHostname: s.Cfg.UserServiceHostName,
+	}
+
+	// dial grpc user service
+	resolver.Register(rb)
+	conn, err := generateGrpcConn(s.Cfg.UserServiceHostName)
+	if err != nil {
+		log.Fatalf("Cannot connect to Grpc server:%v", err)
+	}
+
+	c := library.NewUserClient(conn)
 	routes := mux.NewRouter().PathPrefix("/v1/post").Subrouter()
 
 	userService := NewUserService(s.Store, c)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/GetterSethya/library"
 	"github.com/gorilla/mux"
@@ -14,12 +13,14 @@ import (
 type Server struct {
 	ListenAddr string
 	Store      *SqliteStorage
+	Cfg        AppConfig
 }
 
-func NewServer(listenAddr string, store *SqliteStorage) *Server {
+func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *Server {
 	return &Server{
 		ListenAddr: listenAddr,
 		Store:      store,
+		Cfg:        cfg,
 	}
 }
 
@@ -27,19 +28,13 @@ func (s *Server) Run() {
 
 	routes := mux.NewRouter().PathPrefix("/v1/user").Subrouter()
 
-	rabbitMQHostname := os.Getenv("RABBITMQ_HOSTNAME")
-	if rabbitMQHostname == "" {
-		rabbitMQHostname = "localhost"
-	}
-
 	//rabbitmq conn
-	// amqp://guest:guest@localhost:5672/
-	amqpConnString := fmt.Sprintf("amqp://guest:guest@%s%s/", rabbitMQHostname, RABBITMQPORT)
-	log.Println(amqpConnString)
+	amqpConnString := fmt.Sprintf("amqp://guest:guest@%s%s/", s.Cfg.RabbitMQHostname, RABBITMQPORT)
 	conn, err := amqp.Dial(amqpConnString)
 	if err != nil {
 		log.Println("Error when creating rabbitMq connection:", err)
 	}
+	defer conn.Close()
 
 	rabbitMQ := library.NewRabbitMq(conn)
 	userService := NewUserService(s.Store, rabbitMQ)
