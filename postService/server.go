@@ -6,6 +6,7 @@ import (
 
 	"github.com/GetterSethya/library"
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
 )
 
 type Server struct {
@@ -20,11 +21,12 @@ func NewServer(listenAddr string, store *SqliteStorage) *Server {
 	}
 }
 
-func (s *Server) Run(grpcClient library.UserClient) {
+func (s *Server) Run(grpcClient *grpc.ClientConn) {
 
+	c := library.NewUserClient(grpcClient)
 	routes := mux.NewRouter().PathPrefix("/v1/post").Subrouter()
 
-	userService := NewUserService(s.Store, grpcClient)
+	userService := NewUserService(s.Store, c)
 	userService.RegisterRoutes(routes)
 
 	log.Println("postService is running on port:", PORT)

@@ -55,7 +55,7 @@ func (s *PostService) handleGetPostById(w http.ResponseWriter, r *http.Request) 
 	postId := vars["id"]
 
 	if err := uuid.Validate(postId); err != nil {
-        log.Println("Invalid post uuid url")
+		log.Println("Invalid post uuid url")
 		return http.StatusBadRequest, fmt.Errorf("Post didnot exists")
 	}
 
@@ -159,13 +159,13 @@ func (s *PostService) handleUpdatePost(w http.ResponseWriter, r *http.Request) (
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
 	}
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, post); err != nil {
 		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
 	}
 
 	fetchPost := &Post{}
@@ -242,7 +242,7 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
 	}
 
 	defer r.Body.Close()
@@ -268,7 +268,7 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 
 	if err := json.Unmarshal(body, post); err != nil {
 		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
 	}
 
 	/////////////////////////////

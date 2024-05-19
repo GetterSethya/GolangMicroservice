@@ -10,6 +10,9 @@ const PORT = ":3002"
 // grpc port
 const GRPCPORT = ":4002"
 
+// rabbitmq port
+const RABBITMQPORT = ":5672"
+
 func main() {
 
 	sqliteStorage := NewSqliteStorage()

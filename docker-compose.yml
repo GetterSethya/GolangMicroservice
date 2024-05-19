@@ -1,6 +1,21 @@
 version: "3.8"
 
 services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    volumes:
+      - /var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
   load_balancer:
     image: nginx
     ports:
@@ -52,6 +67,10 @@ services:
       instance: 1
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_SECRET: ${REFRESH_SECRET}
+      RABBITMQ_HOSTNAME: "rabbitmq"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   user_service2:
     build:
@@ -63,6 +82,10 @@ services:
       instance: 2
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_SECRET: ${REFRESH_SECRET}
+      RABBITMQ_HOSTNAME: "rabbitmq"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   auth_service1:
     build:
@@ -99,6 +122,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_SECRET: ${REFRESH_SECRET}
       USER_SERVICE_HOSTNAME: "user_service"
+      RABBITMQ_HOSTNAME: "rabbitmq"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   post_service2:
     build:
@@ -111,6 +138,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_SECRET: ${REFRESH_SECRET}
       USER_SERVICE_HOSTNAME: "user_service"
+      RABBITMQ_HOSTNAME: "rabbitmq"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   imageservice:

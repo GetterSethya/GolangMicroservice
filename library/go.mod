@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect

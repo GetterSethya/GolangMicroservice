@@ -153,8 +153,9 @@ func (s *SqliteStorage) UpdateUserPasswordById(newPassword, id string) error {
 
 	stmt, err := s.db.Prepare(`
         UPDATE users
-        SET hashPassword = ?
-        SET updatedAt = ?
+        SET 
+            hashPassword = ?,
+            updatedAt = ?
         WHERE id = ?`)
 
 	defer stmt.Close()
@@ -197,8 +198,9 @@ func (s *SqliteStorage) UpdateUserNameById(name string, id string) error {
 
 	stmt, err := s.db.Prepare(`
         UPDATE users
-        SET name = ?
-        SET updatedAt = ?
+        SET 
+            name = ?,
+            updatedAt = ?
         WHERE id = ?`)
 	if err != nil {
 		return err

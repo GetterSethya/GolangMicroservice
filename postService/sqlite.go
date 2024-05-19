@@ -312,14 +312,14 @@ func (s *SqliteStorage) UpdatePostUsername(id, username string) error {
 	return nil
 }
 
-func (s *SqliteStorage) UpdatePostName(id, name string) error {
+func (s *SqliteStorage) UpdateName(idUser, name string) error {
 	stmt, err := s.db.Prepare(`
         UPDATE posts
         SET
             name = ?,
             updatedAt = ?
         WHERE 
-            id = ?
+            idUser = ?
             AND deletedAt IS NULL
         `)
 
@@ -331,7 +331,7 @@ func (s *SqliteStorage) UpdatePostName(id, name string) error {
 
 	unixEpoch := time.Now().Unix()
 
-	if _, err := stmt.Exec(name, unixEpoch, id); err != nil {
+	if _, err := stmt.Exec(name, unixEpoch, idUser); err != nil {
 		return err
 	}
 
