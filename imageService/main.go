@@ -10,6 +10,6 @@ func main() {
 
 	cfg := InitConfig()
 
-	server := NewServer(cfg)
+	server := NewAppServer(cfg)
 	server.Run()
 }

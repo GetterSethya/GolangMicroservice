@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
-
 )
 
 // http port
@@ -33,16 +37,37 @@ func main() {
 	sqliteStorage.db.SetMaxIdleConns(25)
 	sqliteStorage.db.SetConnMaxLifetime(5 * time.Minute)
 
-	server := NewServer(PORT, sqliteStorage, cfg)
+	// http s
+	s := NewServer(PORT, sqliteStorage, cfg)
 
 	wg.Add(1)
 	go func() {
-		server.Run()
 		defer wg.Done()
+		s.Run()
 	}()
 
+	// rabbitmq consumer
 	rabbitMq := NewRabbitMQ(cfg, sqliteStorage)
-	rabbitMq.Run()
+	go rabbitMq.Run()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+
+	<-sigs
+	log.Println("SIGTERM detected, will attempt to graceful shutdown...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	// shutdown http.server
+	if err := s.Server.Shutdown(shutdownCtx); err != nil {
+		log.Println("Error when trying to shutdown http server:", err)
+	} else {
+		log.Println("http server closed")
+	}
+
+	// shutdown rabbitmq
+	rabbitMq.Close()
 
 	//biar main func tidak exit duluan
 	wg.Wait()

@@ -1,37 +1,29 @@
 package main
 
 import (
-	"google.golang.org/grpc/resolver"
 	"log"
 	"net/http"
+	"google.golang.org/grpc/resolver"
 
 	"github.com/GetterSethya/library"
 	"github.com/gorilla/mux"
 )
 
-type Server struct {
-	ListenAddr string
-	Store      *SqliteStorage
-	Cfg        AppConfig
+type AppServer struct {
+	Store  *SqliteStorage
+	Cfg    AppConfig
+	Server http.Server
 }
 
-func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *Server {
-	return &Server{
-		ListenAddr: listenAddr,
-		Store:      store,
-		Cfg:        cfg,
-	}
-}
-
-func (s *Server) Run() {
+func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *AppServer {
 
 	rb := &exampleResolverBuilder{
-		UserServiceHostname: s.Cfg.UserServiceHostName,
+		UserServiceHostname: cfg.UserServiceHostName,
 	}
 
 	// dial grpc user service
 	resolver.Register(rb)
-	conn, err := generateGrpcConn(s.Cfg.UserServiceHostName)
+	conn, err := generateGrpcConn(cfg.UserServiceHostName)
 	if err != nil {
 		log.Fatalf("Cannot connect to Grpc server:%v", err)
 	}
@@ -39,9 +31,19 @@ func (s *Server) Run() {
 	c := library.NewUserClient(conn)
 	routes := mux.NewRouter().PathPrefix("/v1/post").Subrouter()
 
-	userService := NewUserService(s.Store, c)
+	userService := NewUserService(store, c)
 	userService.RegisterRoutes(routes)
+	return &AppServer{
+		Store: store,
+		Cfg:   cfg,
+		Server: http.Server{
+			Addr:    listenAddr,
+			Handler: routes,
+		},
+	}
+}
 
+func (s *AppServer) Run() {
 	log.Println("postService is running on port:", PORT)
-	log.Fatal(http.ListenAndServe(s.ListenAddr, routes))
+	s.Server.ListenAndServe()
 }

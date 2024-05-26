@@ -7,10 +7,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	golang.org/x/image v0.15.0
+	golang.org/x/sync v0.7.0
 )
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
