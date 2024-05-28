@@ -11,6 +11,16 @@ type AppHandler func(w http.ResponseWriter, r *http.Request) (int, error)
 
 func CreateHandler(f AppHandler) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		instance := os.Getenv("instance")
 		log.Println("instance", instance)
 		status, err := f(w, r)

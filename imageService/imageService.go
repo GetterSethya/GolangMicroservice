@@ -34,14 +34,14 @@ func NewImageService(host, port string) *ImageService {
 
 func (s *ImageService) RegisterRoutes(r *mux.Router) {
 
-    //v1/image/
-	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleCreateImage))).Methods(http.MethodPost)
-    
-    //v1/image/original/{filename}
-	r.HandleFunc("/original/{filename}", library.CreateHandler(s.handleGetOriImage)).Methods(http.MethodGet)
+	//v1/image/
+	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleCreateImage))).Methods(http.MethodPost, http.MethodOptions)
 
-    //v1/image/thumbnail/{filename}
-	r.HandleFunc("/thumbnail/{filename}", library.CreateHandler(s.handleGetThumbnailImage)).Methods(http.MethodGet)
+	//v1/image/original/{filename}
+	r.HandleFunc("/original/{filename}", library.CreateHandler(s.handleGetOriImage)).Methods(http.MethodGet, http.MethodOptions)
+
+	//v1/image/thumbnail/{filename}
+	r.HandleFunc("/thumbnail/{filename}", library.CreateHandler(s.handleGetThumbnailImage)).Methods(http.MethodGet, http.MethodOptions)
 }
 
 func (s *ImageService) handleGetOriImage(w http.ResponseWriter, r *http.Request) (int, error) {

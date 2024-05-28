@@ -10,42 +10,43 @@ import (
 	"strconv"
 
 	"github.com/GetterSethya/library"
+	"github.com/GetterSethya/userProto"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 type PostService struct {
-	Store      *SqliteStorage
-	GrpcClient library.UserClient
+	Store                 *SqliteStorage
+	UserServiceGrpcClient userProto.UserClient
 }
 
-func NewUserService(store *SqliteStorage, grpcClient library.UserClient) *PostService {
+func NewUserService(store *SqliteStorage, grpcClient userProto.UserClient) *PostService {
 
 	return &PostService{
-		Store:      store,
-		GrpcClient: grpcClient,
+		Store:                 store,
+		UserServiceGrpcClient: grpcClient,
 	}
 }
 
 func (s *PostService) RegisterRoutes(r *mux.Router) {
 
 	//v1/post/create --> bikin post
-	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleCreatePost))).Methods(http.MethodPost)
+	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleCreatePost))).Methods(http.MethodPost, http.MethodOptions)
 
 	//v1/post/ --> delete post (soft delete, deletedAt nya diisi unixepoch) !Penting nanti di cek dulu apakah idUser dari jwt sama dengan idUser yang ada didalam post
-	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleDeletePost))).Methods(http.MethodDelete)
+	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleDeletePost))).Methods(http.MethodDelete, http.MethodOptions)
 
 	//v1/post/{id} --> update post by id (cuma update isi post) !ini di cek juga idUser nya
-	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleUpdatePost))).Methods(http.MethodPost)
+	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleUpdatePost))).Methods(http.MethodPost, http.MethodOptions)
 
 	//v1/post --> list post
-	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleListPost))).Methods(http.MethodGet)
+	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleListPost))).Methods(http.MethodGet, http.MethodOptions)
 
 	//v1/post/user/{idUser} --> list post by user
-	r.HandleFunc("/user/{idUser}", library.CreateHandler(library.JWTMiddleware(s.handleListPostByUser))).Methods(http.MethodGet)
+	r.HandleFunc("/user/{idUser}", library.CreateHandler(library.JWTMiddleware(s.handleListPostByUser))).Methods(http.MethodGet, http.MethodOptions)
 
 	//v1/post/{id} --> get post by id
-	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetPostById))).Methods(http.MethodGet)
+	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetPostById))).Methods(http.MethodGet, http.MethodOptions)
 
 }
 
@@ -247,11 +248,11 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 
 	defer r.Body.Close()
 
-	in := &library.GetUserByIdReq{
+	in := &userProto.GetUserByIdReq{
 		Id: idUser,
 	}
 
-	grpcResp, err := s.GrpcClient.GetUserById(r.Context(), in)
+	grpcResp, err := s.UserServiceGrpcClient.GetUserById(r.Context(), in)
 	if err != nil {
 		log.Println("Error when dialing grpc client with getUserById method:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")

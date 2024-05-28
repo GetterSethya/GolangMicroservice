@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GetterSethya/library"
+	"github.com/GetterSethya/userProto"
 	"github.com/gorilla/mux"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -17,9 +17,9 @@ import (
 )
 
 type AppServer struct {
-	Cfg        AppConfig
-	Server     http.Server
-	GrpcConn   *grpc.ClientConn
+	Cfg      AppConfig
+	Server   http.Server
+	UserServiceGrpcConn *grpc.ClientConn
 }
 
 func NewServer(listenAddr string, cfg AppConfig) *AppServer {
@@ -36,14 +36,14 @@ func NewServer(listenAddr string, cfg AppConfig) *AppServer {
 		log.Fatalf("Cannot connect to Grpc server:%v", err)
 	}
 
-	grpcClient := library.NewUserClient(conn)
+	grpcClient := userProto.NewUserClient(conn)
 	routes := mux.NewRouter().PathPrefix("/v1/auth").Subrouter()
 
 	userService := NewAuthService(cfg.JwtSecret, grpcClient, cfg.RefreshSecret)
 	userService.RegisterRoutes(routes)
 	return &AppServer{
 		Cfg:      cfg,
-		GrpcConn: conn,
+		UserServiceGrpcConn: conn,
 		Server: http.Server{
 			Addr:    listenAddr,
 			Handler: routes,
@@ -75,7 +75,7 @@ func (s *AppServer) Run() {
 
 		defer shutdownCancel()
 
-		if err := s.GrpcConn.Close(); err != nil {
+		if err := s.UserServiceGrpcConn.Close(); err != nil {
 			log.Println("Erron when closing grpc connections:", err)
 		}
 

@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -28,20 +33,45 @@ func main() {
 	sqliteStorage.db.SetMaxIdleConns(25)
 	sqliteStorage.db.SetConnMaxLifetime(5 * time.Minute)
 
-	//gRPC server :4002
+	//grpcServer :4002
+	grpcServer := NewGrpcServer(GRPCPORT, sqliteStorage)
+
+	//http server
+	httpServer := NewServer(PORT, sqliteStorage, cfg)
+
 	wg.Add(1)
 	go func() {
-		server := NewGrpcServer(GRPCPORT, sqliteStorage)
-		server.RunGrpc()
+		grpcServer.RunGrpc()
 		defer wg.Done()
 	}()
 
 	//http server :3002
 	wg.Add(1)
 	go func() {
-		server := NewServer(PORT, sqliteStorage, cfg)
-		server.Run()
+		httpServer.Run()
 		defer wg.Done()
+	}()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+
+	<-sigs
+	log.Println("SIGTERM detected, will attempt to graceful shutdown...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	// shutdown http.server
+	if err := httpServer.Server.Shutdown(shutdownCtx); err != nil {
+		log.Println("Error when trying to shutdown http server:", err)
+	} else {
+		log.Println("http server closed")
+	}
+
+	// shutdown grpc server
+	func() {
+		grpcServer.Server.GracefulStop()
+		log.Println("GRPC server closed")
 	}()
 
 	wg.Wait()

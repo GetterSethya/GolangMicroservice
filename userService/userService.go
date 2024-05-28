@@ -32,17 +32,17 @@ func NewUserService(store *SqliteStorage, producer *library.RabbitMq) *UserServi
 func (s *UserService) RegisterRoutes(r *mux.Router) {
 
 	//v1/user/id/{id}
-	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserById))).Methods(http.MethodGet)
-	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleDeleteUserById))).Methods(http.MethodDelete)
+	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserById))).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleDeleteUserById))).Methods(http.MethodDelete, http.MethodOptions)
 
 	//v1/user/username/{username}
-	r.HandleFunc("/username/{username}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserByUsername))).Methods(http.MethodGet)
+	r.HandleFunc("/username/{username}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserByUsername))).Methods(http.MethodGet, http.MethodOptions)
 
 	//v1/user/update
-	r.HandleFunc("/update", library.CreateHandler(library.JWTMiddleware(s.handleUpdateName))).Methods(http.MethodPost)
+	r.HandleFunc("/update", library.CreateHandler(library.JWTMiddleware(s.handleUpdateName))).Methods(http.MethodPost, http.MethodOptions)
 
 	//v1/user/update_password
-	r.HandleFunc("/update_password", library.CreateHandler(library.JWTMiddleware(s.handleUpdateUserPassword))).Methods(http.MethodPost)
+	r.HandleFunc("/update_password", library.CreateHandler(library.JWTMiddleware(s.handleUpdateUserPassword))).Methods(http.MethodPost, http.MethodOptions)
 
 }
 

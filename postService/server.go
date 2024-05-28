@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"google.golang.org/grpc/resolver"
 
-	"github.com/GetterSethya/library"
 	"github.com/gorilla/mux"
+	"github.com/GetterSethya/userProto"
 )
 
 type AppServer struct {
@@ -28,7 +28,7 @@ func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *AppServe
 		log.Fatalf("Cannot connect to Grpc server:%v", err)
 	}
 
-	c := library.NewUserClient(conn)
+	c := userProto.NewUserClient(conn)
 	routes := mux.NewRouter().PathPrefix("/v1/post").Subrouter()
 
 	userService := NewUserService(store, c)

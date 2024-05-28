@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/GetterSethya/library"
+	"github.com/GetterSethya/userProto"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -18,7 +19,7 @@ import (
 type AuthService struct {
 	JWTSecret     string
 	RefreshSecret string
-	GrpcClient    library.UserClient
+	UserServiceGrpcClient    userProto.UserClient
 }
 
 type tokenChan struct {
@@ -27,11 +28,11 @@ type tokenChan struct {
 	tokenType string
 }
 
-func NewAuthService(jwtSecret string, grpcClient library.UserClient, refreshSecret string) *AuthService {
+func NewAuthService(jwtSecret string, grpcClient userProto.UserClient, refreshSecret string) *AuthService {
 
 	return &AuthService{
 		JWTSecret:     jwtSecret,
-		GrpcClient:    grpcClient,
+		UserServiceGrpcClient:    grpcClient,
 		RefreshSecret: refreshSecret,
 	}
 }
@@ -39,13 +40,13 @@ func NewAuthService(jwtSecret string, grpcClient library.UserClient, refreshSecr
 func (s *AuthService) RegisterRoutes(r *mux.Router) {
 
 	//v1/auth/login
-	r.HandleFunc("/login", library.CreateHandler(s.handleLoginAuth)).Methods(http.MethodPost)
+	r.HandleFunc("/login", library.CreateHandler(s.handleLoginAuth)).Methods(http.MethodPost, http.MethodOptions)
 
 	//v1/auth/register
-	r.HandleFunc("/register", library.CreateHandler(s.handleRegisterAuth)).Methods(http.MethodPost)
+	r.HandleFunc("/register", library.CreateHandler(s.handleRegisterAuth)).Methods(http.MethodPost,http.MethodOptions)
 
 	//v1/auth/refresh
-	r.HandleFunc("/refresh", library.CreateHandler(s.handleRefreshAuth)).Methods(http.MethodPost)
+	r.HandleFunc("/refresh", library.CreateHandler(s.handleRefreshAuth)).Methods(http.MethodPost, http.MethodOptions)
 
 }
 
@@ -81,14 +82,14 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 	}
 
 	// panggil lewat grpc
-	in := &library.CreateUserReq{
+	in := &userProto.CreateUserReq{
 		Id:           uuid,
 		Username:     user.Username,
 		Name:         user.Name,
 		HashPassword: string(hashPassword),
 	}
 
-	_, err = s.GrpcClient.CreateUser(r.Context(), in)
+	_, err = s.UserServiceGrpcClient.CreateUser(r.Context(), in)
 	if err != nil {
 		log.Println("Error when calling s.GrpcClient:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
@@ -127,11 +128,11 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	///////////////////////////
 
 	// panggil grpc getUserByUsername
-	in := &library.GetUserByUsernameReq{
+	in := &userProto.GetUserByUsernameReq{
 		Username: user.Username,
 	}
 
-	userDb, err := s.GrpcClient.GetUserPasswordByUsername(r.Context(), in)
+	userDb, err := s.UserServiceGrpcClient.GetUserPasswordByUsername(r.Context(), in)
 	if err != nil {
 		log.Println("Error when calling GetUserByUsername:", err)
 		return http.StatusBadRequest, fmt.Errorf("Username/password wrong")
@@ -142,13 +143,15 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	}
 
 	// generate jwt token, refresh token
+	expAccess := time.Now().Add(6 * time.Hour)
+	expRefresh := time.Now().Add(24 * time.Hour)
 	go func() {
-		jwtToken, err := library.CreateJWT(userDb.Id, s.JWTSecret, time.Now().Add(6*time.Hour))
+		jwtToken, err := library.CreateJWT(userDb.Id, s.JWTSecret, expAccess)
 		ch <- tokenChan{token: jwtToken, err: err, tokenType: "access"}
 	}()
 
 	go func() {
-		refreshToken, err := library.CreateJWT(userDb.Id, s.RefreshSecret, time.Now().Add(24*time.Hour))
+		refreshToken, err := library.CreateJWT(userDb.Id, s.RefreshSecret, expRefresh)
 		ch <- tokenChan{token: refreshToken, err: err, tokenType: "refresh"}
 	}()
 
@@ -177,6 +180,24 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 		}
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
+
+	access := &http.Cookie{
+		Name:     "accessToken",
+		Value:    jwtToken,
+		Path:     "/",
+		Expires:  expAccess,
+		HttpOnly: true,
+	}
+	refresh := &http.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshToken,
+		Path:     "/",
+		Expires:  expRefresh,
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, access)
+	http.SetCookie(w, refresh)
 
 	library.WriteJson(w, http.StatusOK, map[string]interface{}{"accessToken": jwtToken, "refreshToken": refreshToken})
 

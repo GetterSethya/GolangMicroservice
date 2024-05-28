@@ -1,19 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/GetterSethya/library"
 	"github.com/gorilla/mux"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"golang.org/x/sync/errgroup"
 )
 
 type AppServer struct {
@@ -34,7 +28,6 @@ func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *AppServe
 		log.Println("Error when creating rabbitMq connection:", err)
 	}
 	// defer conn.Close()
-
 	rabbitMQ := library.NewRabbitMq(conn)
 	userService := NewUserService(store, rabbitMQ)
 	userService.RegisterRoutes(routes)
@@ -50,41 +43,7 @@ func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *AppServe
 	}
 }
 
-
 func (s *AppServer) Run() {
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		<-c
-		cancel()
-	}()
 	log.Println("userService is running on port:", PORT)
-
-	g, gctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		return s.Server.ListenAndServe()
-	})
-
-	g.Go(func() error {
-		<-gctx.Done()
-
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-
-		defer shutdownCancel()
-
-		if err := s.AmqpConn.Close(); err != nil {
-			log.Println("Error when closing rabbitmq connection:", err)
-		}
-
-		log.Println("SIGTERM detected, will attempt to graceful shutdown...")
-		return s.Server.Shutdown(shutdownCtx)
-	})
-
-	if err := g.Wait(); err != nil {
-		log.Println(err)
-	}
-
+	s.Server.ListenAndServe()
 }
