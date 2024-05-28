@@ -12,7 +12,15 @@ type AppHandler func(w http.ResponseWriter, r *http.Request) (int, error)
 func CreateHandler(f AppHandler) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		allowOrigin := os.Getenv("ALLOW_ORIGIN")
+		if allowOrigin == "" {
+			log.Println("ALLOW_ORIGIN env key is missing, fallback to *")
+			log.Println("Dont use * on productions")
+
+			allowOrigin = "*"
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -23,6 +31,7 @@ func CreateHandler(f AppHandler) func(http.ResponseWriter, *http.Request) {
 
 		instance := os.Getenv("instance")
 		log.Println("instance", instance)
+
 		status, err := f(w, r)
 		if err != nil {
 			log.Println("Error:", err.Error())
