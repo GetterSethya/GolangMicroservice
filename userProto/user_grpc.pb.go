@@ -4,7 +4,7 @@
 // - protoc             v4.25.0
 // source: user.proto
 
-package library
+package userProto
 
 import (
 	context "context"
@@ -27,6 +27,10 @@ type UserClient interface {
 	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*CreateUserResp, error)
 	GetUserPasswordById(ctx context.Context, in *GetUserByIdReq, opts ...grpc.CallOption) (*UserPasswordResp, error)
 	GetUserPasswordByUsername(ctx context.Context, in *GetUserByUsernameReq, opts ...grpc.CallOption) (*UserPasswordResp, error)
+	IncrementFollowerById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error)
+	DecrementFollowerById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error)
+	IncrementFollowingById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error)
+	DecrementFollowingById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error)
 }
 
 type userClient struct {
@@ -82,6 +86,42 @@ func (c *userClient) GetUserPasswordByUsername(ctx context.Context, in *GetUserB
 	return out, nil
 }
 
+func (c *userClient) IncrementFollowerById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
+	out := new(RelationResp)
+	err := c.cc.Invoke(ctx, "/library.User/IncrementFollowerById", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userClient) DecrementFollowerById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
+	out := new(RelationResp)
+	err := c.cc.Invoke(ctx, "/library.User/DecrementFollowerById", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userClient) IncrementFollowingById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
+	out := new(RelationResp)
+	err := c.cc.Invoke(ctx, "/library.User/IncrementFollowingById", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userClient) DecrementFollowingById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
+	out := new(RelationResp)
+	err := c.cc.Invoke(ctx, "/library.User/DecrementFollowingById", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServer is the server API for User service.
 // All implementations must embed UnimplementedUserServer
 // for forward compatibility
@@ -91,6 +131,10 @@ type UserServer interface {
 	CreateUser(context.Context, *CreateUserReq) (*CreateUserResp, error)
 	GetUserPasswordById(context.Context, *GetUserByIdReq) (*UserPasswordResp, error)
 	GetUserPasswordByUsername(context.Context, *GetUserByUsernameReq) (*UserPasswordResp, error)
+	IncrementFollowerById(context.Context, *RelationReq) (*RelationResp, error)
+	DecrementFollowerById(context.Context, *RelationReq) (*RelationResp, error)
+	IncrementFollowingById(context.Context, *RelationReq) (*RelationResp, error)
+	DecrementFollowingById(context.Context, *RelationReq) (*RelationResp, error)
 	mustEmbedUnimplementedUserServer()
 }
 
@@ -112,6 +156,18 @@ func (UnimplementedUserServer) GetUserPasswordById(context.Context, *GetUserById
 }
 func (UnimplementedUserServer) GetUserPasswordByUsername(context.Context, *GetUserByUsernameReq) (*UserPasswordResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserPasswordByUsername not implemented")
+}
+func (UnimplementedUserServer) IncrementFollowerById(context.Context, *RelationReq) (*RelationResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncrementFollowerById not implemented")
+}
+func (UnimplementedUserServer) DecrementFollowerById(context.Context, *RelationReq) (*RelationResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecrementFollowerById not implemented")
+}
+func (UnimplementedUserServer) IncrementFollowingById(context.Context, *RelationReq) (*RelationResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncrementFollowingById not implemented")
+}
+func (UnimplementedUserServer) DecrementFollowingById(context.Context, *RelationReq) (*RelationResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecrementFollowingById not implemented")
 }
 func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 
@@ -216,6 +272,78 @@ func _User_GetUserPasswordByUsername_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _User_IncrementFollowerById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RelationReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).IncrementFollowerById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/library.User/IncrementFollowerById",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).IncrementFollowerById(ctx, req.(*RelationReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _User_DecrementFollowerById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RelationReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).DecrementFollowerById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/library.User/DecrementFollowerById",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).DecrementFollowerById(ctx, req.(*RelationReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _User_IncrementFollowingById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RelationReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).IncrementFollowingById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/library.User/IncrementFollowingById",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).IncrementFollowingById(ctx, req.(*RelationReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _User_DecrementFollowingById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RelationReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).DecrementFollowingById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/library.User/DecrementFollowingById",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).DecrementFollowingById(ctx, req.(*RelationReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // User_ServiceDesc is the grpc.ServiceDesc for User service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -242,6 +370,22 @@ var User_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserPasswordByUsername",
 			Handler:    _User_GetUserPasswordByUsername_Handler,
+		},
+		{
+			MethodName: "IncrementFollowerById",
+			Handler:    _User_IncrementFollowerById_Handler,
+		},
+		{
+			MethodName: "DecrementFollowerById",
+			Handler:    _User_DecrementFollowerById_Handler,
+		},
+		{
+			MethodName: "IncrementFollowingById",
+			Handler:    _User_IncrementFollowingById_Handler,
+		},
+		{
+			MethodName: "DecrementFollowingById",
+			Handler:    _User_DecrementFollowingById_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

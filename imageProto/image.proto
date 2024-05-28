@@ -1,0 +1,17 @@
+syntax = "proto3";
+package library;
+option go_package = "github.com/GetterSethya/imageProto";
+
+message ImageResp{
+    string thumbnail = 1;
+    string original = 2;
+}
+
+message CreateImageReq {
+    bytes imageFile = 1;
+    string fileName = 2;
+}
+
+service User {
+    rpc CreateImage(CreateImageReq) returns (ImageResp){}
+}

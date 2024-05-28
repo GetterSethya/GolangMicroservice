@@ -3,7 +3,7 @@ syntax = "proto3";
 import "google/protobuf/any.proto";
 
 package library;
-option go_package = "github.com/GetterSethya/library";
+option go_package = "github.com/GetterSethya/userProto";
 
 message UserResp{
     string id = 1;
@@ -42,10 +42,24 @@ message CreateUserResp{
     string message = 1;
 }
 
+message RelationReq {
+    string id = 1;
+}
+
+message RelationResp {
+    string message = 1;
+}
+
 service User {
     rpc GetUserById(GetUserByIdReq) returns (UserResp){}
     rpc GetUserByUsername(GetUserByUsernameReq) returns (UserResp){}
     rpc CreateUser(CreateUserReq) returns (CreateUserResp){}
     rpc GetUserPasswordById(GetUserByIdReq) returns (UserPasswordResp){}
     rpc GetUserPasswordByUsername(GetUserByUsernameReq) returns (UserPasswordResp){}
+
+    rpc IncrementFollowerById(RelationReq) returns (RelationResp){}
+    rpc DecrementFollowerById(RelationReq) returns (RelationResp){}
+
+    rpc IncrementFollowingById(RelationReq) returns (RelationResp){}
+    rpc DecrementFollowingById(RelationReq) returns (RelationResp){}
 }
