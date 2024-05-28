@@ -48,6 +48,8 @@ func (s *SqliteStorage) createUserTable() error {
             name TEXT NOT NULL,
             hashPassword TEXT NOT NULL,
             profile TEXT NOT NULL,
+            totalFollower INTEGER DEFAULT 0 NOT NULL,
+            totalFollowing INTEGER DEFAULT 0 NOT NULL,
             
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL,
@@ -55,6 +57,108 @@ func (s *SqliteStorage) createUserTable() error {
         )`)
 
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) UpdateProfileById(profileUrl, id string) error {
+
+	stmt, err := s.db.Prepare(`
+        UPDATE users
+        SET
+            profile = ?
+        WHERE
+            id = ?
+        `)
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(profileUrl, id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) IncrementFollowerById(id string) error {
+
+	stmt, err := s.db.Prepare(`
+        UPDATE users
+        SET
+            totalFollower = totalFollower + 1
+        WHERE
+            id = ?
+        `)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) DecrementFollowerById(id string) error {
+
+	stmt, err := s.db.Prepare(`
+        UPDATE users
+        SET
+            totalFollower = totalFollower - 1
+        WHERE
+            id = ?
+        `)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) IncrementFollowingById(id string) error {
+	stmt, err := s.db.Prepare(`
+        UPDATE users
+        SET
+            totalFollowing = totalFollowing + 1
+        WHERE
+            id = ?
+        `)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) DecrementFollowingById(id string) error {
+	stmt, err := s.db.Prepare(`
+        UPDATE users
+        SET
+            totalFollowing = totalFollowing - 1
+        WHERE
+            id = ?
+        `)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(id); err != nil {
 		return err
 	}
 
