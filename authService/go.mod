@@ -6,6 +6,7 @@ require github.com/gorilla/mux v1.8.1
 
 require (
 	github.com/GetterSethya/library v1.0.0
+	github.com/GetterSethya/userProto v1.0.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.6.0
 	golang.org/x/crypto v0.19.0
@@ -23,3 +24,5 @@ require (
 )
 
 replace github.com/GetterSethya/library => ../library
+
+replace github.com/GetterSethya/userProto => ../userProto

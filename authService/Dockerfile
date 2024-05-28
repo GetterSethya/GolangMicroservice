@@ -5,9 +5,14 @@ RUN apk add --no-cache --update go gcc g++
 WORKDIR /app
 
 COPY library/ /app/library/
+COPY userProto/ /app/userProto/
+COPY imageProto/ /app/imageProto/
 COPY authService/ .
+ENV GOPROXY https://proxy.golang.org
 
 RUN go mod edit -replace=github.com/GetterSethya/library=/app/library
+RUN go mod edit -replace=github.com/GetterSethya/userProto=/app/userProto
+RUN go mod edit -replace=github.com/GetterSethya/imageProto=/app/imageProto
 RUN go mod tidy
 RUN go mod download
 
