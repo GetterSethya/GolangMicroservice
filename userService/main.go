@@ -16,6 +16,12 @@ const PORT = ":3002"
 // grpc port
 const GRPCPORT = ":4002"
 
+const GRPC_IMAGE_SERVICE_PORT = ":4001"
+const GRPC_IMAGE_SERVICE_NUM_INSTANCE = 2
+
+const IMAGE_SCHEME = "example"
+const IMAGE_SERVICE_NAME = "image-service"
+
 // rabbitmq port
 const RABBITMQPORT = ":5672"
 

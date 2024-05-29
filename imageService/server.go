@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type AppServer struct {
@@ -12,21 +13,20 @@ type AppServer struct {
 }
 
 func NewAppServer(cfg AppConfig) *AppServer {
-
 	router := mux.NewRouter().PathPrefix("/v1/image").Subrouter()
-	imageService := NewImageService(cfg.Host, cfg.Port)
+	imageService := NewImageService(cfg)
 	imageService.RegisterRoutes(router)
 
 	return &AppServer{
 		Cfg: cfg,
 		Server: http.Server{
-			Addr:    cfg.Port,
+			Addr:    cfg.InternalPort,
 			Handler: router,
 		},
 	}
 }
 
 func (s *AppServer) Run() {
-	log.Println("Image service is running on port:", s.Cfg.Port)
+	log.Println("Image service is running on port:", s.Cfg.InternalPort)
 	s.Server.ListenAndServe()
 }

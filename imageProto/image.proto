@@ -1,10 +1,8 @@
 syntax = "proto3";
-package library;
+package imageProto;
 option go_package = "github.com/GetterSethya/imageProto";
 
 message ImageResp{
-    string thumbnail = 1;
-    string original = 2;
     string filename = 3;
 }
 

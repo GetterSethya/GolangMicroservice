@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.25.0
-// source: imageProto/image.proto
+// source: image.proto
 
 package imageProto
 
@@ -35,7 +35,7 @@ func NewUserClient(cc grpc.ClientConnInterface) UserClient {
 
 func (c *userClient) CreateImage(ctx context.Context, in *CreateImageReq, opts ...grpc.CallOption) (*ImageResp, error) {
 	out := new(ImageResp)
-	err := c.cc.Invoke(ctx, "/library.User/CreateImage", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/imageProto.User/CreateImage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func _User_CreateImage_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/CreateImage",
+		FullMethod: "/imageProto.User/CreateImage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).CreateImage(ctx, req.(*CreateImageReq))
@@ -92,7 +92,7 @@ func _User_CreateImage_Handler(srv interface{}, ctx context.Context, dec func(in
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var User_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "library.User",
+	ServiceName: "imageProto.User",
 	HandlerType: (*UserServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -101,5 +101,5 @@ var User_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "imageProto/image.proto",
+	Metadata: "image.proto",
 }

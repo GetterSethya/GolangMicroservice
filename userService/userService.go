@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/GetterSethya/imageProto"
 	"github.com/GetterSethya/library"
 	"github.com/gorilla/mux"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -15,35 +16,34 @@ import (
 )
 
 type UserService struct {
-	Store    *SqliteStorage
-	RabbitMQ *library.RabbitMq
+	Store           *SqliteStorage
+	RabbitMQ        *library.RabbitMq
+	ImageGrpcClient imageProto.UserClient
 }
 
 const defaultProfile = "1714794135-a06a41d8-6351-4dbb-9141-a7e2ace86a35.jpg"
 
-func NewUserService(store *SqliteStorage, producer *library.RabbitMq) *UserService {
-
+func NewUserService(store *SqliteStorage, producer *library.RabbitMq, imageGrpcClient imageProto.UserClient) *UserService {
 	return &UserService{
-		Store:    store,
-		RabbitMQ: producer,
+		Store:           store,
+		RabbitMQ:        producer,
+		ImageGrpcClient: imageGrpcClient,
 	}
 }
 
 func (s *UserService) RegisterRoutes(r *mux.Router) {
-
-	//v1/user/id/{id}
+	// v1/user/id/{id}
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserById))).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleDeleteUserById))).Methods(http.MethodDelete, http.MethodOptions)
 
-	//v1/user/username/{username}
+	// v1/user/username/{username}
 	r.HandleFunc("/username/{username}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserByUsername))).Methods(http.MethodGet, http.MethodOptions)
 
-	//v1/user/update -> update user data by jwt
+	// v1/user/update -> update user data by jwt
 	r.HandleFunc("/update", library.CreateHandler(library.JWTMiddleware(s.handleUpdateUserByJWT))).Methods(http.MethodPost, http.MethodOptions)
 
-	//v1/user/update_password
+	// v1/user/update_password
 	r.HandleFunc("/update_password", library.CreateHandler(library.JWTMiddleware(s.handleUpdateUserPassword))).Methods(http.MethodPost, http.MethodOptions)
-
 }
 
 func (s *UserService) handleDeleteUserById(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -162,7 +162,6 @@ func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 }
 
 func (s *UserService) handleUpdateUserByJWT(w http.ResponseWriter, r *http.Request) (int, error) {
-
 	type NameChangeEvent struct {
 		Id      string `json:"id"`
 		Name    string `json:"name"`

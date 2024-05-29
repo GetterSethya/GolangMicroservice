@@ -20,27 +20,27 @@ import (
 )
 
 type ImageService struct {
-	host string
-	port string
+	host         string
+	port         string
+	internalPort string
 }
 
-func NewImageService(host, port string) *ImageService {
-
+func NewImageService(cfg AppConfig) *ImageService {
 	return &ImageService{
-		host: host,
-		port: port,
+		host:         cfg.Host,
+		port:         cfg.Port,
+		internalPort: cfg.InternalPort,
 	}
 }
 
 func (s *ImageService) RegisterRoutes(r *mux.Router) {
-
-	//v1/image/
+	// v1/image/
 	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleCreateImage))).Methods(http.MethodPost, http.MethodOptions)
 
-	//v1/image/original/{filename}
+	// v1/image/original/{filename}
 	r.HandleFunc("/original/{filename}", library.CreateHandler(s.handleGetOriImage)).Methods(http.MethodGet, http.MethodOptions)
 
-	//v1/image/thumbnail/{filename}
+	// v1/image/thumbnail/{filename}
 	r.HandleFunc("/thumbnail/{filename}", library.CreateHandler(s.handleGetThumbnailImage)).Methods(http.MethodGet, http.MethodOptions)
 }
 
@@ -168,12 +168,8 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
 
-	respThumb := fmt.Sprintf("http://%s%s/v1/image/thumbnail/"+stamp, s.host, s.port)
-	respOri := fmt.Sprintf("http://%s%s/v1/image/original/"+stamp, s.host, s.port)
 
 	data := AppImage{
-		Thumbnail: respThumb,
-		Original:  respOri,
 		Filename:  stamp,
 	}
 
@@ -213,7 +209,6 @@ func (s *ImageService) getImage(w http.ResponseWriter, r *http.Request, imageTyp
 }
 
 func resize(img image.Image, width int) image.Image {
-
 	originWidth := img.Bounds().Dx()
 	originHeight := img.Bounds().Dy()
 	ratio := float64(originHeight) / float64(originWidth)

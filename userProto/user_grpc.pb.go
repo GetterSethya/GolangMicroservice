@@ -43,7 +43,7 @@ func NewUserClient(cc grpc.ClientConnInterface) UserClient {
 
 func (c *userClient) GetUserById(ctx context.Context, in *GetUserByIdReq, opts ...grpc.CallOption) (*UserResp, error) {
 	out := new(UserResp)
-	err := c.cc.Invoke(ctx, "/library.User/GetUserById", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/GetUserById", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (c *userClient) GetUserById(ctx context.Context, in *GetUserByIdReq, opts .
 
 func (c *userClient) GetUserByUsername(ctx context.Context, in *GetUserByUsernameReq, opts ...grpc.CallOption) (*UserResp, error) {
 	out := new(UserResp)
-	err := c.cc.Invoke(ctx, "/library.User/GetUserByUsername", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/GetUserByUsername", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (c *userClient) GetUserByUsername(ctx context.Context, in *GetUserByUsernam
 
 func (c *userClient) CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*CreateUserResp, error) {
 	out := new(CreateUserResp)
-	err := c.cc.Invoke(ctx, "/library.User/CreateUser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/CreateUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (c *userClient) CreateUser(ctx context.Context, in *CreateUserReq, opts ...
 
 func (c *userClient) GetUserPasswordById(ctx context.Context, in *GetUserByIdReq, opts ...grpc.CallOption) (*UserPasswordResp, error) {
 	out := new(UserPasswordResp)
-	err := c.cc.Invoke(ctx, "/library.User/GetUserPasswordById", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/GetUserPasswordById", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (c *userClient) GetUserPasswordById(ctx context.Context, in *GetUserByIdReq
 
 func (c *userClient) GetUserPasswordByUsername(ctx context.Context, in *GetUserByUsernameReq, opts ...grpc.CallOption) (*UserPasswordResp, error) {
 	out := new(UserPasswordResp)
-	err := c.cc.Invoke(ctx, "/library.User/GetUserPasswordByUsername", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/GetUserPasswordByUsername", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (c *userClient) GetUserPasswordByUsername(ctx context.Context, in *GetUserB
 
 func (c *userClient) IncrementFollowerById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
 	out := new(RelationResp)
-	err := c.cc.Invoke(ctx, "/library.User/IncrementFollowerById", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/IncrementFollowerById", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (c *userClient) IncrementFollowerById(ctx context.Context, in *RelationReq,
 
 func (c *userClient) DecrementFollowerById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
 	out := new(RelationResp)
-	err := c.cc.Invoke(ctx, "/library.User/DecrementFollowerById", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/DecrementFollowerById", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *userClient) DecrementFollowerById(ctx context.Context, in *RelationReq,
 
 func (c *userClient) IncrementFollowingById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
 	out := new(RelationResp)
-	err := c.cc.Invoke(ctx, "/library.User/IncrementFollowingById", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/IncrementFollowingById", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (c *userClient) IncrementFollowingById(ctx context.Context, in *RelationReq
 
 func (c *userClient) DecrementFollowingById(ctx context.Context, in *RelationReq, opts ...grpc.CallOption) (*RelationResp, error) {
 	out := new(RelationResp)
-	err := c.cc.Invoke(ctx, "/library.User/DecrementFollowingById", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/userProto.User/DecrementFollowingById", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func _User_GetUserById_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/GetUserById",
+		FullMethod: "/userProto.User/GetUserById",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).GetUserById(ctx, req.(*GetUserByIdReq))
@@ -210,7 +210,7 @@ func _User_GetUserByUsername_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/GetUserByUsername",
+		FullMethod: "/userProto.User/GetUserByUsername",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).GetUserByUsername(ctx, req.(*GetUserByUsernameReq))
@@ -228,7 +228,7 @@ func _User_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/CreateUser",
+		FullMethod: "/userProto.User/CreateUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).CreateUser(ctx, req.(*CreateUserReq))
@@ -246,7 +246,7 @@ func _User_GetUserPasswordById_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/GetUserPasswordById",
+		FullMethod: "/userProto.User/GetUserPasswordById",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).GetUserPasswordById(ctx, req.(*GetUserByIdReq))
@@ -264,7 +264,7 @@ func _User_GetUserPasswordByUsername_Handler(srv interface{}, ctx context.Contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/GetUserPasswordByUsername",
+		FullMethod: "/userProto.User/GetUserPasswordByUsername",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).GetUserPasswordByUsername(ctx, req.(*GetUserByUsernameReq))
@@ -282,7 +282,7 @@ func _User_IncrementFollowerById_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/IncrementFollowerById",
+		FullMethod: "/userProto.User/IncrementFollowerById",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).IncrementFollowerById(ctx, req.(*RelationReq))
@@ -300,7 +300,7 @@ func _User_DecrementFollowerById_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/DecrementFollowerById",
+		FullMethod: "/userProto.User/DecrementFollowerById",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).DecrementFollowerById(ctx, req.(*RelationReq))
@@ -318,7 +318,7 @@ func _User_IncrementFollowingById_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/IncrementFollowingById",
+		FullMethod: "/userProto.User/IncrementFollowingById",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).IncrementFollowingById(ctx, req.(*RelationReq))
@@ -336,7 +336,7 @@ func _User_DecrementFollowingById_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/library.User/DecrementFollowingById",
+		FullMethod: "/userProto.User/DecrementFollowingById",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).DecrementFollowingById(ctx, req.(*RelationReq))
@@ -348,7 +348,7 @@ func _User_DecrementFollowingById_Handler(srv interface{}, ctx context.Context, 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var User_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "library.User",
+	ServiceName: "userProto.User",
 	HandlerType: (*UserServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
