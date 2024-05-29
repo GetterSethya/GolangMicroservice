@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/GetterSethya/imageProto"
 	"github.com/GetterSethya/library"
 	"github.com/GetterSethya/userProto"
 	"github.com/google/uuid"
@@ -16,38 +17,37 @@ import (
 )
 
 type PostService struct {
-	Store                 *SqliteStorage
-	UserServiceGrpcClient userProto.UserClient
+	Store                  *SqliteStorage
+	UserServiceGrpcClient  userProto.UserClient
+	ImageServiceGrpcClient imageProto.UserClient
 }
 
-func NewUserService(store *SqliteStorage, grpcClient userProto.UserClient) *PostService {
-
+func NewUserService(store *SqliteStorage, userGrpcClient userProto.UserClient, imageGrpcClient imageProto.UserClient) *PostService {
 	return &PostService{
-		Store:                 store,
-		UserServiceGrpcClient: grpcClient,
+		Store:                  store,
+		UserServiceGrpcClient:  userGrpcClient,
+		ImageServiceGrpcClient: imageGrpcClient,
 	}
 }
 
 func (s *PostService) RegisterRoutes(r *mux.Router) {
-
-	//v1/post/create --> bikin post
+	// v1/post/create --> bikin post
 	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleCreatePost))).Methods(http.MethodPost, http.MethodOptions)
 
-	//v1/post/ --> delete post (soft delete, deletedAt nya diisi unixepoch) !Penting nanti di cek dulu apakah idUser dari jwt sama dengan idUser yang ada didalam post
+	// v1/post/ --> delete post (soft delete, deletedAt nya diisi unixepoch) !Penting nanti di cek dulu apakah idUser dari jwt sama dengan idUser yang ada didalam post
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleDeletePost))).Methods(http.MethodDelete, http.MethodOptions)
 
-	//v1/post/{id} --> update post by id (cuma update isi post) !ini di cek juga idUser nya
+	// v1/post/{id} --> update post by id (cuma update isi post) !ini di cek juga idUser nya
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleUpdatePost))).Methods(http.MethodPost, http.MethodOptions)
 
-	//v1/post --> list post
+	// v1/post --> list post
 	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleListPost))).Methods(http.MethodGet, http.MethodOptions)
 
-	//v1/post/user/{idUser} --> list post by user
+	// v1/post/user/{idUser} --> list post by user
 	r.HandleFunc("/user/{idUser}", library.CreateHandler(library.JWTMiddleware(s.handleListPostByUser))).Methods(http.MethodGet, http.MethodOptions)
 
-	//v1/post/{id} --> get post by id
+	// v1/post/{id} --> get post by id
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetPostById))).Methods(http.MethodGet, http.MethodOptions)
-
 }
 
 func (s *PostService) handleGetPostById(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -83,7 +83,7 @@ func (s *PostService) handleListPostByUser(w http.ResponseWriter, r *http.Reques
 
 	urlQuery := r.URL.Query()
 	limit := urlQuery.Get("limit")
-	offset := urlQuery.Get("offset")
+	cursor := urlQuery.Get("cursor")
 	vars := mux.Vars(r)
 	profileId := vars["idUser"]
 
@@ -91,18 +91,18 @@ func (s *PostService) handleListPostByUser(w http.ResponseWriter, r *http.Reques
 		limit = "10"
 	}
 
-	if offset == "" {
-		offset = "0"
+	if cursor == "" {
+		cursor = "0"
 	}
 
-	intOffset, err := strconv.Atoi(offset)
+	intCursor, err := strconv.Atoi(cursor)
 	if err != nil {
-		intOffset = 0
+		intCursor = 0
 	}
 
 	posts := &[]Post{}
 
-	if err := s.Store.ListPostByUser(int64(intOffset), profileId, posts); err != nil {
+	if err := s.Store.ListPostByUser(int64(intCursor), profileId, posts); err != nil {
 
 		log.Println("Error when getting listPost:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
@@ -121,20 +121,20 @@ func (s *PostService) handleListPost(w http.ResponseWriter, r *http.Request) (in
 	log.Println("hit handle list post")
 
 	urlQuery := r.URL.Query()
-	offset := urlQuery.Get("offset")
+	cursor := urlQuery.Get("cursor")
 
-	if offset == "" {
-		offset = "0"
+	if cursor == "" {
+		cursor = "0"
 	}
 
-	intOffset, err := strconv.Atoi(offset)
+	intCursor, err := strconv.Atoi(cursor)
 	if err != nil {
-		intOffset = 0
+		intCursor = 0
 	}
 
 	posts := &[]Post{}
 
-	if err := s.Store.ListPost(int64(intOffset), posts); err != nil {
+	if err := s.Store.ListPost(int64(intCursor), posts); err != nil {
 
 		log.Println("Error when getting listPost:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
@@ -240,6 +240,28 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 
 	idUser := library.GetUserIdFromJWT(r)
 
+	// ambil image dari formdata
+	err := r.ParseMultipartForm(2 * 1024 * 1024)
+	if err != nil {
+		log.Println("Error when parsing request formdata:", err)
+		return http.StatusBadRequest, fmt.Errorf("Invalid formdata, or missing the required field")
+	}
+
+	// baca io.reader
+	file, handler, err := r.FormFile("reqImage")
+	if err != nil {
+		log.Println("Error when creating file handler:", err)
+		return http.StatusBadRequest, fmt.Errorf("FIle corrupted or not exists")
+	}
+
+	defer file.Close()
+
+	bytesFile, err := io.ReadAll(file)
+	if err != nil {
+		log.Println("Error when reading file from form data:", err)
+		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
+	}
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error when reading body:", err)
@@ -248,13 +270,24 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 
 	defer r.Body.Close()
 
-	in := &userProto.GetUserByIdReq{
+	userIn := &userProto.GetUserByIdReq{
 		Id: idUser,
 	}
 
-	grpcResp, err := s.UserServiceGrpcClient.GetUserById(r.Context(), in)
+	userGrpcResp, err := s.UserServiceGrpcClient.GetUserById(r.Context(), userIn)
 	if err != nil {
 		log.Println("Error when dialing grpc client with getUserById method:", err)
+		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+	}
+
+	imageIn := &imageProto.CreateImageReq{
+		ImageFile: bytesFile,
+		FileName:  handler.Filename,
+	}
+
+	imageGrpcResp, err := s.ImageServiceGrpcClient.CreateImage(r.Context(), imageIn)
+	if err != nil {
+		log.Println("Error when dialing image grpc client with CreateImage method:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
 
@@ -263,8 +296,10 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 	post := &Post{
 		Id:       uuid,
 		IdUser:   idUser,
-		Username: grpcResp.GetUsername(),
-		Name:     grpcResp.GetName(),
+		Username: userGrpcResp.GetUsername(),
+		Name:     userGrpcResp.GetName(),
+		Profile:  userGrpcResp.GetProfile(),
+		Image:    imageGrpcResp.GetFilename(),
 	}
 
 	if err := json.Unmarshal(body, post); err != nil {
@@ -276,15 +311,14 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 	//TODO validasi input user//
 	///////////////////////////
 
-	if err := s.Store.CreatePost(post.Id, post.Image, post.Body, post.IdUser, post.Username, post.Name); err != nil {
+	if err := s.Store.CreatePost(post.Id, post.Image, post.Body, post.IdUser, post.Username, post.Name, post.Profile); err != nil {
 		log.Println("Error when creating post:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+
 	}
 
 	resp := library.NewResp("post created!", nil)
-
 	library.WriteJson(w, http.StatusCreated, resp)
 
 	return http.StatusCreated, nil
-
 }

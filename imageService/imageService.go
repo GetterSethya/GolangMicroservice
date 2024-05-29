@@ -168,12 +168,13 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
 
-	respThumb := fmt.Sprintf("http://%s%s/v1/image/thumbnail"+stamp, s.host, s.port)
-	respOri := fmt.Sprintf("http://%s%s/v1/image/original"+stamp, s.host, s.port)
+	respThumb := fmt.Sprintf("http://%s%s/v1/image/thumbnail/"+stamp, s.host, s.port)
+	respOri := fmt.Sprintf("http://%s%s/v1/image/original/"+stamp, s.host, s.port)
 
 	data := AppImage{
 		Thumbnail: respThumb,
 		Original:  respOri,
+		Filename:  stamp,
 	}
 
 	resp := library.NewResp("Image created", data)

@@ -19,7 +19,7 @@ type UserService struct {
 	RabbitMQ *library.RabbitMq
 }
 
-const defaultProfile = "http://localhost/v1/image/thumbnail/1714794135-a06a41d8-6351-4dbb-9141-a7e2ace86a35.jpg"
+const defaultProfile = "1714794135-a06a41d8-6351-4dbb-9141-a7e2ace86a35.jpg"
 
 func NewUserService(store *SqliteStorage, producer *library.RabbitMq) *UserService {
 
@@ -38,8 +38,8 @@ func (s *UserService) RegisterRoutes(r *mux.Router) {
 	//v1/user/username/{username}
 	r.HandleFunc("/username/{username}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserByUsername))).Methods(http.MethodGet, http.MethodOptions)
 
-	//v1/user/update
-	r.HandleFunc("/update", library.CreateHandler(library.JWTMiddleware(s.handleUpdateName))).Methods(http.MethodPost, http.MethodOptions)
+	//v1/user/update -> update user data by jwt
+	r.HandleFunc("/update", library.CreateHandler(library.JWTMiddleware(s.handleUpdateUserByJWT))).Methods(http.MethodPost, http.MethodOptions)
 
 	//v1/user/update_password
 	r.HandleFunc("/update_password", library.CreateHandler(library.JWTMiddleware(s.handleUpdateUserPassword))).Methods(http.MethodPost, http.MethodOptions)
@@ -161,11 +161,12 @@ func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 	return http.StatusOK, nil
 }
 
-func (s *UserService) handleUpdateName(w http.ResponseWriter, r *http.Request) (int, error) {
+func (s *UserService) handleUpdateUserByJWT(w http.ResponseWriter, r *http.Request) (int, error) {
 
 	type NameChangeEvent struct {
-		Id   string `json:"id"`
-		Name string `json:"name"`
+		Id      string `json:"id"`
+		Name    string `json:"name"`
+		Profile string `json:"profile"`
 	}
 
 	log.Println("hit handle update user name")
@@ -190,7 +191,7 @@ func (s *UserService) handleUpdateName(w http.ResponseWriter, r *http.Request) (
 
 	userIdJWT := library.GetUserIdFromJWT(r)
 
-	if err := s.Store.UpdateUserNameById(user.Name, userIdJWT); err != nil {
+	if err := s.Store.UpdateUserNameAndProfile(user.Name, user.Profile, userIdJWT); err != nil {
 		log.Println("Error when updating username:", err)
 		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
 	}
@@ -230,7 +231,7 @@ func (s *UserService) handleUpdateName(w http.ResponseWriter, r *http.Request) (
 	err = ch.PublishWithContext(
 		r.Context(),
 		"userServiceExchange",
-		"user.name.change",
+		"user.detail.change",
 		false,
 		false,
 		amqp.Publishing{

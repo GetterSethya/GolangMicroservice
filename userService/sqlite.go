@@ -298,12 +298,13 @@ func (s *SqliteStorage) DeleteUserById(id string) error {
 	return nil
 }
 
-func (s *SqliteStorage) UpdateUserNameById(name string, id string) error {
+func (s *SqliteStorage) UpdateUserNameAndProfile(name, profile, id string) error {
 
 	stmt, err := s.db.Prepare(`
         UPDATE users
         SET 
             name = ?,
+            profile = ?,
             updatedAt = ?
         WHERE id = ?`)
 	if err != nil {
@@ -313,7 +314,7 @@ func (s *SqliteStorage) UpdateUserNameById(name string, id string) error {
 
 	unixEpoch := time.Now().Unix()
 
-	if _, err := stmt.Exec(name, unixEpoch, id); err != nil {
+	if _, err := stmt.Exec(name, profile, unixEpoch, id); err != nil {
 		return err
 	}
 

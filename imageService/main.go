@@ -13,6 +13,7 @@ import (
 type AppImage struct {
 	Thumbnail string `json:"thumbnail"`
 	Original  string `json:"original"`
+	Filename  string `json:"filename"`
 }
 
 // grpc port

@@ -141,12 +141,13 @@ func (s *GrpcServer) CreateImage(ctx context.Context, req *imageProto.CreateImag
 		return nil, fmt.Errorf("Something went wrong")
 	}
 
-	respThumb := fmt.Sprintf("http://%s%s/v1/image/thumbnail"+stamp, s.Cfg.Host, s.Cfg.Port)
-	respOri := fmt.Sprintf("http://%s%s/v1/image/original"+stamp, s.Cfg.Host, s.Cfg.Port)
+	respThumb := fmt.Sprintf("http://%s%s/v1/image/thumbnail/"+stamp, s.Cfg.Host, s.Cfg.Port)
+	respOri := fmt.Sprintf("http://%s%s/v1/image/original/"+stamp, s.Cfg.Host, s.Cfg.Port)
 
 	resp := &imageProto.ImageResp{
 		Thumbnail: respThumb,
 		Original:  respOri,
+		Filename:  stamp,
 	}
 
 	return resp, nil

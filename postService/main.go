@@ -15,10 +15,16 @@ const PORT = ":3004"
 
 // grpc port
 const GRPC_USER_SERVICE_PORT = ":4002"
-const GRPC_NUM_INSTANCE = 2
+const GRPC_USER_SERVICE_NUM_INSTANCE = 2
 
-const exampleScheme = "example"
-const exampleServiceName = "user-service"
+const GRPC_IMAGE_SERVICE_PORT = ":4001"
+const GRPC_IMAGE_SERVICE_NUM_INSTANCE = 2
+
+const USER_SCHEME = "user"
+const USER_SERVICE_NAME = "user-service"
+
+const IMAGE_SCHEME = "example"
+const IMAGE_SERVICE_NAME = "image-service"
 
 // rabbitmq port
 const RABBITMQ_PORT = ":5672"
@@ -37,7 +43,7 @@ func main() {
 	sqliteStorage.db.SetMaxIdleConns(25)
 	sqliteStorage.db.SetConnMaxLifetime(5 * time.Minute)
 
-	// http s
+	// http server
 	s := NewServer(PORT, sqliteStorage, cfg)
 
 	wg.Add(1)

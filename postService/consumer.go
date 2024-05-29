@@ -58,7 +58,7 @@ func (c *Consumer) Consume(rabbitMQHostname string) {
 
 	err = ch.QueueBind(
 		q.Name,
-		"user.name.change",
+		"user.detail.change",
 		"userServiceExchange",
 		false,
 		nil,
@@ -96,8 +96,9 @@ func (c *Consumer) Consume(rabbitMQHostname string) {
 
 func (c *Consumer) handleUpdateName(data []byte) {
 	type nameChangeEvent struct {
-		Id   string `json:"id"`
-		Name string `json:"name"`
+		Id      string `json:"id"`
+		Name    string `json:"name"`
+		Profile string `json:"profile"`
 	}
 
 	newUserData := &nameChangeEvent{}
@@ -107,7 +108,7 @@ func (c *Consumer) handleUpdateName(data []byte) {
 		log.Println("Error when unmarshaling user data:", err)
 	}
 
-	if err := c.Store.UpdateName(newUserData.Id, newUserData.Name); err != nil {
+	if err := c.Store.UpdateUserDetail(newUserData.Id, newUserData.Profile, newUserData.Name); err != nil {
 		log.Println("Error when updating post name:", err)
 	}
 

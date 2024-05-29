@@ -7,6 +7,7 @@ type Post struct {
 	IdUser       string `json:"idUser"`
 	Username     string `json:"username"`
 	Name         string `json:"name"`
+	Profile      string `json:"profile"`
 	TotalLikes   int64  `json:"totalLikes"`
 	TotalReplies int64  `json:"totalReplies"`
 
