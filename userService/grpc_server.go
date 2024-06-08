@@ -180,9 +180,9 @@ func (s *GrpcServer) CreateUser(ctx context.Context, req *userProto.CreateUserRe
 	); err != nil {
 		log.Println("Error when inserting user:", err)
 		if strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
-			return resp, fmt.Errorf("Username already used")
+			return resp, fmt.Errorf("username already used")
 		}
-		return resp, fmt.Errorf("Something went wrong")
+		return resp, fmt.Errorf("something went wrong")
 	}
 
 	resp.Message = "User created!"

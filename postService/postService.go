@@ -68,7 +68,7 @@ func (s *PostService) handleGetPostById(w http.ResponseWriter, r *http.Request) 
 			return http.StatusNotFound, fmt.Errorf("Post didnot exists")
 		}
 
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("Success", map[string]interface{}{"post": post})
@@ -105,7 +105,7 @@ func (s *PostService) handleListPostByUser(w http.ResponseWriter, r *http.Reques
 	if err := s.Store.ListPostByUser(int64(intCursor), profileId, posts); err != nil {
 
 		log.Println("Error when getting listPost:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("success", map[string]interface{}{
@@ -137,7 +137,7 @@ func (s *PostService) handleListPost(w http.ResponseWriter, r *http.Request) (in
 	if err := s.Store.ListPost(int64(intCursor), posts); err != nil {
 
 		log.Println("Error when getting listPost:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("success", map[string]interface{}{
@@ -160,13 +160,13 @@ func (s *PostService) handleUpdatePost(w http.ResponseWriter, r *http.Request) (
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
+		return http.StatusBadRequest, fmt.Errorf("invalid post detail")
 	}
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, post); err != nil {
 		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
+		return http.StatusBadRequest, fmt.Errorf("invalid post detail")
 	}
 
 	fetchPost := &Post{}
@@ -176,12 +176,12 @@ func (s *PostService) handleUpdatePost(w http.ResponseWriter, r *http.Request) (
 			return http.StatusNotFound, fmt.Errorf("Post didnot exists")
 		}
 
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	if fetchPost.IdUser != userId {
 		log.Println("Post userid did not match userid from jwt")
-		return http.StatusUnauthorized, fmt.Errorf("Unauthorized")
+		return http.StatusUnauthorized, fmt.Errorf("unauthorized")
 	}
 
 	/////////////////////////////
@@ -190,7 +190,7 @@ func (s *PostService) handleUpdatePost(w http.ResponseWriter, r *http.Request) (
 
 	if err := s.Store.UpdatePostBody(postId, post.Body, userId); err != nil {
 		log.Println("Error when updating post body:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("Post updated successfully!", nil)
@@ -212,10 +212,10 @@ func (s *PostService) handleDeletePost(w http.ResponseWriter, r *http.Request) (
 	if err != nil {
 		log.Println("getPostById err:", err)
 		if err == sql.ErrNoRows {
-			return http.StatusNotFound, fmt.Errorf("Post didnot exists")
+			return http.StatusNotFound, fmt.Errorf("post didnot exists")
 		}
 
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	if userId != post.IdUser {
@@ -225,7 +225,7 @@ func (s *PostService) handleDeletePost(w http.ResponseWriter, r *http.Request) (
 
 	if err := s.Store.DeletePostById(postId, userId); err != nil {
 		log.Println("Error when deleting post by id:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("Post deleted successfully", nil)
@@ -239,59 +239,54 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 	log.Println("hit handle create post")
 
 	idUser := library.GetUserIdFromJWT(r)
+	postImage := ""
+	userIn := &userProto.GetUserByIdReq{
+		Id: idUser,
+	}
+	uuid := uuid.NewString()
 
 	// ambil image dari formdata
 	err := r.ParseMultipartForm(2 * 1024 * 1024)
 	if err != nil {
 		log.Println("Error when parsing request formdata:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid formdata, or missing the required field")
+		return http.StatusBadRequest, fmt.Errorf("invalid formdata, or missing the required field")
 	}
 
-	// baca io.reader
+	reqBody := r.FormValue("reqBody")
+	if reqBody == "" {
+		log.Println("Error when getting reqBody, invalid/missing form data")
+		return http.StatusBadRequest, fmt.Errorf("invalid/missing form data")
+	}
+
 	file, handler, err := r.FormFile("reqImage")
 	if err != nil {
 		log.Println("Error when creating file handler:", err)
-		return http.StatusBadRequest, fmt.Errorf("FIle corrupted or not exists")
-	}
+	} else {
+		defer file.Close()
+		bytesFile, err := io.ReadAll(file)
+		if err != nil {
+			log.Println("Error when reading file from form data:", err)
+			return http.StatusBadRequest, fmt.Errorf("invalid post detail")
+		}
 
-	defer file.Close()
+		imageIn := &imageProto.CreateImageReq{
+			ImageFile: bytesFile,
+			FileName:  handler.Filename,
+		}
 
-	bytesFile, err := io.ReadAll(file)
-	if err != nil {
-		log.Println("Error when reading file from form data:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
-	}
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
-	}
-
-	defer r.Body.Close()
-
-	userIn := &userProto.GetUserByIdReq{
-		Id: idUser,
+		imageGrpcResp, err := s.ImageServiceGrpcClient.CreateImage(r.Context(), imageIn)
+		if err != nil {
+			log.Println("Error when dialing image grpc client with CreateImage method:", err)
+			return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+		}
+		postImage = imageGrpcResp.GetFilename()
 	}
 
 	userGrpcResp, err := s.UserServiceGrpcClient.GetUserById(r.Context(), userIn)
 	if err != nil {
 		log.Println("Error when dialing grpc client with getUserById method:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
-
-	imageIn := &imageProto.CreateImageReq{
-		ImageFile: bytesFile,
-		FileName:  handler.Filename,
-	}
-
-	imageGrpcResp, err := s.ImageServiceGrpcClient.CreateImage(r.Context(), imageIn)
-	if err != nil {
-		log.Println("Error when dialing image grpc client with CreateImage method:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
-	}
-
-	uuid := uuid.NewString()
 
 	post := &Post{
 		Id:       uuid,
@@ -299,12 +294,8 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 		Username: userGrpcResp.GetUsername(),
 		Name:     userGrpcResp.GetName(),
 		Profile:  userGrpcResp.GetProfile(),
-		Image:    imageGrpcResp.GetFilename(),
-	}
-
-	if err := json.Unmarshal(body, post); err != nil {
-		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid post detail")
+		Image:    postImage,
+		Body:     reqBody,
 	}
 
 	/////////////////////////////
@@ -313,7 +304,7 @@ func (s *PostService) handleCreatePost(w http.ResponseWriter, r *http.Request) (
 
 	if err := s.Store.CreatePost(post.Id, post.Image, post.Body, post.IdUser, post.Username, post.Name, post.Profile); err != nil {
 		log.Println("Error when creating post:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 
 	}
 

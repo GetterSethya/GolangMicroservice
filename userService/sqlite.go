@@ -13,7 +13,6 @@ type SqliteStorage struct {
 }
 
 func NewSqliteStorage() *SqliteStorage {
-
 	db, err := sql.Open("sqlite3", "data/userService.db")
 	if err != nil {
 		log.Panic("panic:", err)
@@ -29,7 +28,6 @@ func NewSqliteStorage() *SqliteStorage {
 }
 
 func (s *SqliteStorage) Init() {
-
 	if err := s.setPragmaWal(); err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +35,6 @@ func (s *SqliteStorage) Init() {
 	if err := s.createUserTable(); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func (s *SqliteStorage) createUserTable() error {
@@ -55,7 +52,6 @@ func (s *SqliteStorage) createUserTable() error {
             updatedAt INTEGER NOT NULL,
             deletedAt INTEGER
         )`)
-
 	if err != nil {
 		return err
 	}
@@ -64,7 +60,6 @@ func (s *SqliteStorage) createUserTable() error {
 }
 
 func (s *SqliteStorage) UpdateProfileById(profileUrl, id string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE users
         SET
@@ -84,7 +79,6 @@ func (s *SqliteStorage) UpdateProfileById(profileUrl, id string) error {
 }
 
 func (s *SqliteStorage) IncrementFollowerById(id string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE users
         SET
@@ -92,7 +86,6 @@ func (s *SqliteStorage) IncrementFollowerById(id string) error {
         WHERE
             id = ?
         `)
-
 	if err != nil {
 		return err
 	}
@@ -105,7 +98,6 @@ func (s *SqliteStorage) IncrementFollowerById(id string) error {
 }
 
 func (s *SqliteStorage) DecrementFollowerById(id string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE users
         SET
@@ -113,7 +105,6 @@ func (s *SqliteStorage) DecrementFollowerById(id string) error {
         WHERE
             id = ?
         `)
-
 	if err != nil {
 		return err
 	}
@@ -133,7 +124,6 @@ func (s *SqliteStorage) IncrementFollowingById(id string) error {
         WHERE
             id = ?
         `)
-
 	if err != nil {
 		return err
 	}
@@ -153,7 +143,6 @@ func (s *SqliteStorage) DecrementFollowingById(id string) error {
         WHERE
             id = ?
         `)
-
 	if err != nil {
 		return err
 	}
@@ -166,7 +155,6 @@ func (s *SqliteStorage) DecrementFollowingById(id string) error {
 }
 
 func (s *SqliteStorage) CreateUser(id, username, name, hashPassword, profile string, createdAt, updatedAt int64) error {
-
 	stmt, err := s.db.Prepare(`
         INSERT INTO users (
         id,
@@ -199,7 +187,6 @@ func (s *SqliteStorage) CreateUser(id, username, name, hashPassword, profile str
 }
 
 func (s *SqliteStorage) GetUserPasswordByUsername(username string, user *User) error {
-
 	stmt, err := s.db.Prepare(`
         SELECT 
         id,
@@ -227,7 +214,6 @@ func (s *SqliteStorage) GetUserPasswordByUsername(username string, user *User) e
 }
 
 func (s *SqliteStorage) GetUserPasswordById(id string, user *User) error {
-
 	stmt, err := s.db.Prepare(`
         SELECT 
         id,
@@ -254,19 +240,17 @@ func (s *SqliteStorage) GetUserPasswordById(id string, user *User) error {
 }
 
 func (s *SqliteStorage) UpdateUserPasswordById(newPassword, id string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE users
         SET 
             hashPassword = ?,
             updatedAt = ?
         WHERE id = ?`)
-
-	defer stmt.Close()
-
 	if err != nil {
 		return err
 	}
+
+	defer stmt.Close()
 
 	unixEpoch := time.Now().Unix()
 
@@ -278,7 +262,6 @@ func (s *SqliteStorage) UpdateUserPasswordById(newPassword, id string) error {
 }
 
 func (s *SqliteStorage) DeleteUserById(id string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE users
         SET deletedAt = ?
@@ -299,7 +282,6 @@ func (s *SqliteStorage) DeleteUserById(id string) error {
 }
 
 func (s *SqliteStorage) UpdateUserNameAndProfile(name, profile, id string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE users
         SET 
@@ -322,7 +304,6 @@ func (s *SqliteStorage) UpdateUserNameAndProfile(name, profile, id string) error
 }
 
 func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) error {
-
 	stmt, err := s.db.Prepare(`
         SELECT 
         id,
@@ -353,7 +334,6 @@ func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) err
 }
 
 func (s *SqliteStorage) GetUserById(id string, user *ReturnUser) error {
-
 	stmt, err := s.db.Prepare(`
         SELECT 
         id,

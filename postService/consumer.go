@@ -21,7 +21,6 @@ func NewConsumer(conn *amqp.Connection, store *SqliteStorage) *Consumer {
 }
 
 func (c *Consumer) Consume(rabbitMQHostname string) {
-
 	var wg sync.WaitGroup
 
 	ch, err := c.Conn.Channel()
@@ -63,7 +62,6 @@ func (c *Consumer) Consume(rabbitMQHostname string) {
 		false,
 		nil,
 	)
-
 	if err != nil {
 		log.Println("Error when binding queue:", err)
 	}
@@ -84,32 +82,32 @@ func (c *Consumer) Consume(rabbitMQHostname string) {
 	wg.Add(1)
 	go func() {
 		for d := range msgs {
-			//update data user
+			// update data user
 			log.Println("New event receive:", string(d.Body))
-			c.handleUpdateName(d.Body)
+			c.handleUpdateUserDetail(d.Body)
 		}
 		defer wg.Done()
 	}()
 	wg.Wait()
-
 }
 
-func (c *Consumer) handleUpdateName(data []byte) {
-	type nameChangeEvent struct {
+func (c *Consumer) handleUpdateUserDetail(data []byte) {
+	type userDetailChangeEvent struct {
 		Id      string `json:"id"`
 		Name    string `json:"name"`
 		Profile string `json:"profile"`
 	}
 
-	newUserData := &nameChangeEvent{}
+	newUserData := &userDetailChangeEvent{}
 
 	err := json.Unmarshal(data, newUserData)
 	if err != nil {
 		log.Println("Error when unmarshaling user data:", err)
 	}
 
+	log.Print("new user data", newUserData.Id, newUserData.Profile, newUserData.Name)
+
 	if err := c.Store.UpdateUserDetail(newUserData.Id, newUserData.Profile, newUserData.Name); err != nil {
 		log.Println("Error when updating post name:", err)
 	}
-
 }

@@ -62,7 +62,7 @@ func (s *UserService) handleDeleteUserById(w http.ResponseWriter, r *http.Reques
 			return http.StatusNotFound, fmt.Errorf("User didnot exists")
 		}
 
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("User deleted!", nil)
@@ -82,7 +82,7 @@ func (s *UserService) handleGetUserById(w http.ResponseWriter, r *http.Request) 
 
 	err := s.Store.GetUserById(id, user)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("User did not exists/not found")
+		return http.StatusNotFound, fmt.Errorf("user did not exists/not found")
 	}
 
 	resp := library.NewResp("Success", map[string]interface{}{"user": user})
@@ -102,7 +102,7 @@ func (s *UserService) handleGetUserByUsername(w http.ResponseWriter, r *http.Req
 	err := s.Store.GetUserByUsername(username, user)
 	if err != nil {
 		log.Println("Error when getting user by username", err)
-		return http.StatusNotFound, fmt.Errorf("User did not exists/not found")
+		return http.StatusNotFound, fmt.Errorf("user did not exists/not found")
 	}
 
 	resp := library.NewResp("Success", map[string]interface{}{"user": user})
@@ -133,11 +133,11 @@ func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 
 	if err := json.Unmarshal(body, &changePass); err != nil {
 		log.Println("Error when umarshaling json", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("invalid user detail")
 	}
 
 	if changePass.NewPassword != changePass.ConfirmNewPassword {
-		return http.StatusBadRequest, fmt.Errorf("New password didnot match with confirm new password")
+		return http.StatusBadRequest, fmt.Errorf("new password didnot match with confirm new password")
 	}
 
 	/////////////////////////////
@@ -146,12 +146,12 @@ func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 	newPassword, err := bcrypt.GenerateFromPassword([]byte(changePass.NewPassword), 12)
 	if err != nil {
 		log.Println("Error when hashing password:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	if err := s.Store.UpdateUserPasswordById(string(newPassword), userIdJWT); err != nil {
 		log.Println("Error when updating username:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("User password updated!", nil)
@@ -162,43 +162,80 @@ func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 }
 
 func (s *UserService) handleUpdateUserByJWT(w http.ResponseWriter, r *http.Request) (int, error) {
-	type NameChangeEvent struct {
+	// semua input user pake formData
+	type UserDetailChangeEvent struct {
 		Id      string `json:"id"`
 		Name    string `json:"name"`
 		Profile string `json:"profile"`
 	}
 
+	userIdJWT := library.GetUserIdFromJWT(r)
+
 	log.Println("hit handle update user name")
 
-	body, err := io.ReadAll(r.Body)
+	// ambil image dari formdata
+	err := r.ParseMultipartForm(2 * 1024 * 1024)
 	if err != nil {
-		log.Println("Error when reading body:", err)
+		log.Println("Error when parsing request formdata:", err)
+		return http.StatusBadRequest, fmt.Errorf("invalid image/image is too big")
 	}
 
-	defer r.Body.Close()
-
-	user := &User{}
-
-	if err := json.Unmarshal(body, &user); err != nil {
-		log.Println("Error when umarshaling json", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+	reqName := r.FormValue("reqName")
+	if reqName == "" {
+		log.Println("Error when getting reqName, invalid/missing form data")
+		return http.StatusBadRequest, fmt.Errorf("invalid/missing form data")
 	}
+
+	userData := &ReturnUser{}
+
+	err = s.Store.GetUserById(userIdJWT, userData)
+	if err != nil {
+		log.Println("Error when getting user data", err)
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+	}
+
+	newUserData := &User{}
+	newUserData.Name = reqName
+
+	file, handler, err := r.FormFile("reqImage")
+	if err != nil {
+		newUserData.Profile = userData.Profile
+	} else {
+		defer file.Close()
+		bytesFile, err := io.ReadAll(file)
+		if err != nil {
+			log.Println("Error when reading file from form data:", err)
+			return http.StatusBadRequest, fmt.Errorf("invalid post detail")
+		}
+
+		createImageGrpcReq := &imageProto.CreateImageReq{
+			ImageFile: bytesFile,
+			FileName:  handler.Filename,
+		}
+
+		imageGrpcResp, err := s.ImageGrpcClient.CreateImage(r.Context(), createImageGrpcReq)
+		if err != nil {
+			log.Println("Error when calling createImage grpc:", err)
+			return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+		}
+		newUserData.Profile = imageGrpcResp.GetFilename()
+	}
+
+	log.Printf("newUserData: %+v", newUserData)
 
 	/////////////////////////////
 	//TODO validasi input user//
 	///////////////////////////
 
-	userIdJWT := library.GetUserIdFromJWT(r)
-
-	if err := s.Store.UpdateUserNameAndProfile(user.Name, user.Profile, userIdJWT); err != nil {
+	if err := s.Store.UpdateUserNameAndProfile(newUserData.Name, newUserData.Profile, userIdJWT); err != nil {
 		log.Println("Error when updating username:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	ch, err := s.RabbitMQ.Conn.Channel()
 	if err != nil {
 		log.Println("Error when creating channel in user service handler")
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 	defer ch.Close()
 
@@ -213,18 +250,19 @@ func (s *UserService) handleUpdateUserByJWT(w http.ResponseWriter, r *http.Reque
 	)
 	if err != nil {
 		log.Println("Error when declaring exchange:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
-	event := NameChangeEvent{
-		Id:   userIdJWT,
-		Name: user.Name,
+	event := UserDetailChangeEvent{
+		Id:      userIdJWT,
+		Name:    newUserData.Name,
+		Profile: newUserData.Profile,
 	}
 
 	publishBody, err := json.Marshal(event)
 	if err != nil {
 		log.Println("Error when marshaling event:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	err = ch.PublishWithContext(
@@ -239,6 +277,10 @@ func (s *UserService) handleUpdateUserByJWT(w http.ResponseWriter, r *http.Reque
 			Body:         publishBody,
 		},
 	)
+	if err != nil {
+		log.Println("Error when publishing user.detail.change event")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+	}
 
 	resp := library.NewResp("User updated!", nil)
 

@@ -13,7 +13,6 @@ type SqliteStorage struct {
 }
 
 func NewSqliteStorage() *SqliteStorage {
-
 	db, err := sql.Open("sqlite3", "data/postService.db")
 	if err != nil {
 		log.Panic("panic:", err)
@@ -29,7 +28,6 @@ func NewSqliteStorage() *SqliteStorage {
 }
 
 func (s *SqliteStorage) Init() {
-
 	if err := s.setPragmaWal(); err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +35,6 @@ func (s *SqliteStorage) Init() {
 	if err := s.createPostTable(); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func (s *SqliteStorage) createPostTable() error {
@@ -57,7 +54,6 @@ func (s *SqliteStorage) createPostTable() error {
             updatedAt INTEGER NOT NULL,
             deletedAt INTEGER
         )`)
-
 	if err != nil {
 		return err
 	}
@@ -66,7 +62,6 @@ func (s *SqliteStorage) createPostTable() error {
 }
 
 func (s *SqliteStorage) UpdatePostBody(id, body, userid string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE posts
         SET
@@ -93,13 +88,40 @@ func (s *SqliteStorage) UpdatePostBody(id, body, userid string) error {
 
 // listPostByUser --> nampilin list post yang dibuat oleh user
 func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, posts *[]Post) error {
-	stmt, err := s.listPostByUserStatement(cursor, userId)
+	queryStr := `
+        SELECT
+            id,
+            image,
+            body,
+            idUser,
+            username,
+            name,
+            profile,
+            totalLikes,
+            totalReplies,
+            createdAt,
+            updatedAt
+        FROM
+            posts 
+        WHERE
+            idUser = ?
+            AND deletedAt IS NULL
+            AND createdAt < ?
+        ORDER BY
+            createdAt DESC
+        LIMIT 10`
+
+	stmt, err := s.db.Prepare(queryStr)
 	if err != nil {
 		log.Println("Stmt error:", err)
 		return err
 	}
 
 	defer stmt.Close()
+
+	if cursor == 0 {
+		cursor = 922337203685477
+	}
 
 	rows, err := stmt.Query(userId, cursor)
 	if err != nil {
@@ -130,15 +152,40 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, posts *[]Pos
 	}
 
 	return nil
-
 }
 
 // listPosts --> nampilin list post
 func (s *SqliteStorage) ListPost(cursor int64, posts *[]Post) error {
-	stmt, err := s.listPostStatement(cursor)
-	defer stmt.Close()
+	queryStr := `
+        SELECT
+            id,
+            image,
+            body,
+            idUser,
+            username,
+            name,
+            profile,
+            totalLikes,
+            totalReplies,
+            createdAt,
+            updatedAt
+        FROM
+            posts 
+        WHERE
+            deletedAt IS NULL
+            AND createdAt < ?
+        ORDER BY
+            createdAt DESC
+        LIMIT 10
+        `
+	stmt, err := s.db.Prepare(queryStr)
 	if err != nil {
 		log.Println("Error when creating stmt in listPosts", err)
+	}
+	defer stmt.Close()
+
+	if cursor == 0 {
+		cursor = 922337203685477
 	}
 
 	rows, err := stmt.Query(cursor)
@@ -157,6 +204,7 @@ func (s *SqliteStorage) ListPost(cursor int64, posts *[]Post) error {
 			&post.IdUser,
 			&post.Username,
 			&post.Name,
+			&post.Profile,
 			&post.TotalLikes,
 			&post.TotalReplies,
 			&post.CreatedAt,
@@ -182,6 +230,7 @@ func (s *SqliteStorage) GetPostById(id string, post *Post) error {
             idUser,
             username,
             name,
+            profile,
             totalLikes,
             totalReplies,
             createdAt,
@@ -206,6 +255,7 @@ func (s *SqliteStorage) GetPostById(id string, post *Post) error {
 		&post.IdUser,
 		&post.Username,
 		&post.Name,
+		&post.Profile,
 		&post.TotalLikes,
 		&post.TotalReplies,
 		&post.CreatedAt,
@@ -218,7 +268,6 @@ func (s *SqliteStorage) GetPostById(id string, post *Post) error {
 }
 
 func (s *SqliteStorage) DeletePostById(id, userId string) error {
-
 	stmt, err := s.db.Prepare(`
         UPDATE 
             posts
@@ -244,33 +293,8 @@ func (s *SqliteStorage) DeletePostById(id, userId string) error {
 	return nil
 }
 
-// func (s *SqliteStorage) UpdatePostUsername(id, username string) error {
-// 	stmt, err := s.db.Prepare(`
-//         UPDATE posts
-//         SET
-//             username = ?,
-//             updatedAt = ?
-//         WHERE
-//             id = ?
-//             AND deletedAt IS NULL
-//         `)
-//
-// 	defer stmt.Close()
-//
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// 	unixEpoch := time.Now().Unix()
-//
-// 	if _, err := stmt.Exec(username, unixEpoch, id); err != nil {
-// 		return err
-// 	}
-//
-// 	return nil
-// }
-
 func (s *SqliteStorage) UpdateUserDetail(idUser, profile, name string) error {
+	log.Println(idUser, profile, name)
 	stmt, err := s.db.Prepare(`
         UPDATE posts
         SET
@@ -281,18 +305,19 @@ func (s *SqliteStorage) UpdateUserDetail(idUser, profile, name string) error {
             idUser = ?
             AND deletedAt IS NULL
         `)
-
-	defer stmt.Close()
-
 	if err != nil {
 		return err
 	}
+
+	defer stmt.Close()
 
 	unixEpoch := time.Now().Unix()
 
 	if _, err := stmt.Exec(name, profile, unixEpoch, idUser); err != nil {
 		return err
 	}
+
+	log.Println("done updating user detail in post service")
 
 	return nil
 }
@@ -333,108 +358,6 @@ func (s *SqliteStorage) CreatePost(id, image, body, idUser, username, name, prof
 	}
 
 	return nil
-}
-
-func (s *SqliteStorage) listPostByUserStatement(cursor int64, idUser string) (*sql.Stmt, error) {
-	var queryStr string
-	if cursor == 0 {
-		queryStr = `
-        SELECT
-            id,
-            image,
-            body,
-            idUser,
-            username,
-            name,
-            totalLikes,
-            totalReplies,
-            createdAt,
-            updatedAt
-        FROM
-            posts 
-        WHERE
-            idUser = ?
-            AND deletedAt IS NULL
-        ORDER BY
-            createdAt DESC
-        LIMIT 10`
-
-		return s.db.Prepare(queryStr)
-	} else {
-		queryStr = `
-        SELECT
-            id,
-            image,
-            body,
-            idUser,
-            username,
-            name,
-            totalLikes,
-            totalReplies,
-            createdAt,
-            updatedAt
-        FROM
-            posts 
-        WHERE
-            idUser = ?
-            AND deletedAt IS NULL
-            AND createdAt < ?
-        ORDER BY
-            createdAt DESC
-        LIMIT 10`
-
-		return s.db.Prepare(queryStr)
-	}
-}
-
-func (s *SqliteStorage) listPostStatement(cursor int64) (*sql.Stmt, error) {
-	var queryStr string
-	if cursor == 0 {
-		queryStr = `
-        SELECT
-            id,
-            image,
-            body,
-            idUser,
-            username,
-            name,
-            totalLikes,
-            totalReplies,
-            createdAt,
-            updatedAt
-        FROM
-            posts 
-        WHERE
-            deletedAt IS NULL
-        ORDER BY
-            createdAt DESC
-        LIMIT 10
-        `
-		return s.db.Prepare(queryStr)
-	} else {
-		queryStr = `
-        SELECT
-            id,
-            image,
-            body,
-            idUser,
-            username,
-            name,
-            totalLikes,
-            totalReplies,
-            createdAt,
-            updatedAt
-        FROM
-            posts 
-        WHERE
-            deletedAt IS NULL
-            AND createdAt < ?
-        ORDER BY
-            createdAt DESC
-        LIMIT 10
-        `
-		return s.db.Prepare(queryStr)
-	}
 }
 
 func (s *SqliteStorage) setPragmaWal() error {
