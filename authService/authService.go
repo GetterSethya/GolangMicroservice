@@ -17,9 +17,9 @@ import (
 )
 
 type AuthService struct {
-	JWTSecret     string
-	RefreshSecret string
-	UserServiceGrpcClient    userProto.UserClient
+	JWTSecret             string
+	RefreshSecret         string
+	UserServiceGrpcClient userProto.UserClient
 }
 
 type tokenChan struct {
@@ -29,35 +29,31 @@ type tokenChan struct {
 }
 
 func NewAuthService(jwtSecret string, grpcClient userProto.UserClient, refreshSecret string) *AuthService {
-
 	return &AuthService{
-		JWTSecret:     jwtSecret,
-		UserServiceGrpcClient:    grpcClient,
-		RefreshSecret: refreshSecret,
+		JWTSecret:             jwtSecret,
+		UserServiceGrpcClient: grpcClient,
+		RefreshSecret:         refreshSecret,
 	}
 }
 
 func (s *AuthService) RegisterRoutes(r *mux.Router) {
-
-	//v1/auth/login
+	// v1/auth/login
 	r.HandleFunc("/login", library.CreateHandler(s.handleLoginAuth)).Methods(http.MethodPost, http.MethodOptions)
 
-	//v1/auth/register
-	r.HandleFunc("/register", library.CreateHandler(s.handleRegisterAuth)).Methods(http.MethodPost,http.MethodOptions)
+	// v1/auth/register
+	r.HandleFunc("/register", library.CreateHandler(s.handleRegisterAuth)).Methods(http.MethodPost, http.MethodOptions)
 
-	//v1/auth/refresh
+	// v1/auth/refresh
 	r.HandleFunc("/refresh", library.CreateHandler(s.handleRefreshAuth)).Methods(http.MethodPost, http.MethodOptions)
-
 }
 
 func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request) (int, error) {
-
 	log.Println("hit handle register auth")
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("invalid user detail")
 	}
 
 	defer r.Body.Close()
@@ -66,7 +62,7 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 
 	if err := json.Unmarshal(body, user); err != nil {
 		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("invalid user detail")
 	}
 
 	/////////////////////////////
@@ -78,7 +74,7 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
 		log.Println("Error when hashing password:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	// panggil lewat grpc
@@ -92,7 +88,7 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 	_, err = s.UserServiceGrpcClient.CreateUser(r.Context(), in)
 	if err != nil {
 		log.Println("Error when calling s.GrpcClient:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	resp := library.NewResp("user created!", nil)
@@ -103,7 +99,6 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (int, error) {
-
 	ch := make(chan tokenChan)
 	defer close(ch)
 
@@ -112,7 +107,7 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("invalid user detail")
 	}
 
 	defer r.Body.Close()
@@ -120,7 +115,7 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	user := &LoginUser{}
 	if err := json.Unmarshal(body, user); err != nil {
 		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user creds")
+		return http.StatusBadRequest, fmt.Errorf("invalid user creds")
 	}
 
 	/////////////////////////////
@@ -135,11 +130,11 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	userDb, err := s.UserServiceGrpcClient.GetUserPasswordByUsername(r.Context(), in)
 	if err != nil {
 		log.Println("Error when calling GetUserByUsername:", err)
-		return http.StatusBadRequest, fmt.Errorf("Username/password wrong")
+		return http.StatusBadRequest, fmt.Errorf("username/password wrong")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(userDb.HashPassword), []byte(user.Password)); err != nil {
-		return http.StatusBadRequest, fmt.Errorf("Invalid username/password")
+		return http.StatusBadRequest, fmt.Errorf("invalid username/password")
 	}
 
 	// generate jwt token, refresh token
@@ -178,7 +173,7 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 		for _, err := range errs {
 			log.Println(err)
 		}
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	access := &http.Cookie{
@@ -196,10 +191,12 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 		HttpOnly: true,
 	}
 
+	resp := library.NewResp("User authenticated", map[string]interface{}{"accessToken": jwtToken, "refreshToken": refreshToken})
+
 	http.SetCookie(w, access)
 	http.SetCookie(w, refresh)
 
-	library.WriteJson(w, http.StatusOK, map[string]interface{}{"accessToken": jwtToken, "refreshToken": refreshToken})
+	library.WriteJson(w, http.StatusOK, resp)
 
 	return http.StatusOK, nil
 }
@@ -216,7 +213,7 @@ func (s *AuthService) handleRefreshAuth(w http.ResponseWriter, r *http.Request) 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid user detail")
+		return http.StatusBadRequest, fmt.Errorf("invalid user detail")
 	}
 
 	defer r.Body.Close()
@@ -224,12 +221,12 @@ func (s *AuthService) handleRefreshAuth(w http.ResponseWriter, r *http.Request) 
 	re := &Refresh{}
 	if err := json.Unmarshal(body, re); err != nil {
 		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid refresh token")
+		return http.StatusBadRequest, fmt.Errorf("invalid refresh token")
 	}
 
 	token, err := library.ValidateJWT(re.RefreshToken, s.RefreshSecret)
 	if err != nil {
-		return http.StatusUnauthorized, fmt.Errorf("Invalid refresh token")
+		return http.StatusUnauthorized, fmt.Errorf("invalid refresh token")
 	}
 
 	userId := token.Claims.(jwt.MapClaims)["sub"].(string)
@@ -268,10 +265,12 @@ func (s *AuthService) handleRefreshAuth(w http.ResponseWriter, r *http.Request) 
 		for _, err := range errs {
 			log.Println(err)
 		}
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
-	library.WriteJson(w, http.StatusOK, map[string]interface{}{"accessToken": jwtToken, "refreshToken": refreshToken})
+	resp := library.NewResp("token refreshed", map[string]interface{}{"accessToken": jwtToken, "refreshToken": refreshToken})
+
+	library.WriteJson(w, http.StatusOK, resp)
 
 	return http.StatusOK, nil
 }

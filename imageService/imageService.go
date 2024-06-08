@@ -73,21 +73,21 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 	err := r.ParseMultipartForm(2 * 1024 * 1024)
 	if err != nil {
 		log.Println("Error when parsing request formdata:", err)
-		return http.StatusBadRequest, fmt.Errorf("Invalid formdata, or missing the required field")
+		return http.StatusBadRequest, fmt.Errorf("invalid formdata, or missing the required field")
 	}
 
 	// baca io.reader
 	file, handler, err := r.FormFile("reqImage")
 	if err != nil {
 		log.Println("Error when creating file handler:", err)
-		return http.StatusBadRequest, fmt.Errorf("Something went wrong")
+		return http.StatusBadRequest, fmt.Errorf("something went wrong")
 	}
 
 	defer file.Close()
 
 	fileExt := strings.ToLower(filepath.Ext(handler.Filename))
-	if !(fileExt == ".jpeg" || fileExt == ".jpg") {
-		return http.StatusBadRequest, fmt.Errorf("Invalid file type: %s, only jpg/jpeg supported", fileExt)
+	if fileExt != ".jpeg" && fileExt != ".jpg" {
+		return http.StatusBadRequest, fmt.Errorf("invalid file type: %s, only jpg/jpeg supported", fileExt)
 	}
 
 	originalDir := filepath.Join("data", "original")
@@ -96,13 +96,13 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 	err = os.MkdirAll(originalDir, os.ModePerm)
 	if err != nil {
 		log.Println("Error when creating original image directory:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	err = os.MkdirAll(thumbDir, os.ModePerm)
 	if err != nil {
 		log.Println("Error when creating thumbnail image directory:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	timestamp := time.Now().Unix()
@@ -117,7 +117,7 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 	oriFileData, err := os.Create(oriFilename)
 	if err != nil {
 		log.Println("Error when creating original file object:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	defer oriFileData.Close()
@@ -126,14 +126,14 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 	_, err = io.Copy(oriFileData, file)
 	if err != nil {
 		log.Println("Error when duplicating file object:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	thumbFilename := filepath.Join("data", "thumbnail", stamp)
 	thumbFileData, err := os.Create(thumbFilename)
 	if err != nil {
 		log.Println("Error when creating thumbnail file object")
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	defer thumbFileData.Close()
@@ -143,7 +143,7 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		log.Println("extensions", fileExt)
 		log.Println("Error when decoding original image file:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	// cek apakah imagenya kecil dari ukuran thumbnail, jika tidak kita resize ke ukuran thumbnail
@@ -152,31 +152,30 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 		err = jpeg.Encode(thumbFileData, thumb, nil)
 		if err != nil {
 			log.Println("Error when scaling image:", err)
-			return http.StatusInternalServerError, fmt.Errorf("Invalid image/image is not supported")
+			return http.StatusInternalServerError, fmt.Errorf("invalid image/image is not supported")
 		}
 	}
 
 	_, err = oriFileData.Seek(0, 0)
 	if err != nil {
 		log.Println("Error when seeking original image file:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	_, err = io.Copy(thumbFileData, oriFileData)
 	if err != nil {
 		log.Println("Error when duplicating thumbnail file object:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
-
 	data := AppImage{
-		Filename:  stamp,
+		Filename: stamp,
 	}
 
 	resp := library.NewResp("Image created", data)
 	if err = library.WriteJson(w, http.StatusCreated, resp); err != nil {
 		log.Println("Error when writing json response:", err)
-		return http.StatusInternalServerError, fmt.Errorf("Something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
 	return http.StatusCreated, nil
