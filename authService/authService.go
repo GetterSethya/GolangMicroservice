@@ -138,6 +138,7 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	}
 
 	// generate jwt token, refresh token
+	// expAccess := time.Now().Add(6 * time.Second)
 	expAccess := time.Now().Add(6 * time.Hour)
 	expRefresh := time.Now().Add(24 * time.Hour)
 	go func() {
@@ -233,6 +234,7 @@ func (s *AuthService) handleRefreshAuth(w http.ResponseWriter, r *http.Request) 
 
 	// generate jwt token, refresh token
 	go func() {
+		// jwtToken, err := library.CreateJWT(userId, s.JWTSecret, time.Now().Add(6*time.Second))
 		jwtToken, err := library.CreateJWT(userId, s.JWTSecret, time.Now().Add(6*time.Hour))
 		ch <- tokenChan{token: jwtToken, err: err, tokenType: "access"}
 	}()
