@@ -87,7 +87,7 @@ func (s *SqliteStorage) UpdatePostBody(id, body, userid string) error {
 }
 
 // listPostByUser --> nampilin list post yang dibuat oleh user
-func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, posts *[]Post) error {
+func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, limit int32, posts *[]Post) error {
 	queryStr := `
         SELECT
             id,
@@ -109,7 +109,7 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, posts *[]Pos
             AND createdAt < ?
         ORDER BY
             createdAt DESC
-        LIMIT 10`
+        LIMIT ?`
 
 	stmt, err := s.db.Prepare(queryStr)
 	if err != nil {
@@ -123,7 +123,7 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, posts *[]Pos
 		cursor = 922337203685477
 	}
 
-	rows, err := stmt.Query(userId, cursor)
+	rows, err := stmt.Query(userId, cursor, limit)
 	if err != nil {
 		return err
 	}
@@ -139,6 +139,7 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, posts *[]Pos
 			&post.IdUser,
 			&post.Username,
 			&post.Name,
+			&post.Profile,
 			&post.TotalLikes,
 			&post.TotalReplies,
 			&post.CreatedAt,
@@ -155,7 +156,7 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, posts *[]Pos
 }
 
 // listPosts --> nampilin list post
-func (s *SqliteStorage) ListPost(cursor int64, posts *[]Post) error {
+func (s *SqliteStorage) ListPost(cursor int64, limit int32, posts *[]Post) error {
 	queryStr := `
         SELECT
             id,
@@ -176,7 +177,7 @@ func (s *SqliteStorage) ListPost(cursor int64, posts *[]Post) error {
             AND createdAt < ?
         ORDER BY
             createdAt DESC
-        LIMIT 10
+        LIMIT ?
         `
 	stmt, err := s.db.Prepare(queryStr)
 	if err != nil {
@@ -188,7 +189,7 @@ func (s *SqliteStorage) ListPost(cursor int64, posts *[]Post) error {
 		cursor = 922337203685477
 	}
 
-	rows, err := stmt.Query(cursor)
+	rows, err := stmt.Query(cursor, limit)
 	if err != nil {
 		return err
 	}

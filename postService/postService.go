@@ -100,16 +100,28 @@ func (s *PostService) handleListPostByUser(w http.ResponseWriter, r *http.Reques
 		intCursor = 0
 	}
 
+	intLimit, err := strconv.Atoi(limit)
+	if err != nil {
+		intLimit = 10
+	}
+
 	posts := &[]Post{}
 
-	if err := s.Store.ListPostByUser(int64(intCursor), profileId, posts); err != nil {
+	if err := s.Store.ListPostByUser(int64(intCursor), profileId, int32(intLimit), posts); err != nil {
 
 		log.Println("Error when getting listPost:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
+	meta := struct {
+		Cursor int64 `json:"cursor"`
+	}{
+		Cursor: (*posts)[len(*posts)-1].CreatedAt,
+	}
+
 	resp := library.NewResp("success", map[string]interface{}{
 		"posts": posts,
+		"meta":  meta,
 	})
 
 	library.WriteJson(w, http.StatusOK, resp)
@@ -122,9 +134,13 @@ func (s *PostService) handleListPost(w http.ResponseWriter, r *http.Request) (in
 
 	urlQuery := r.URL.Query()
 	cursor := urlQuery.Get("cursor")
+	limit := urlQuery.Get("limit")
 
 	if cursor == "" {
 		cursor = "0"
+	}
+	if limit == "" {
+		limit = "10"
 	}
 
 	intCursor, err := strconv.Atoi(cursor)
@@ -132,16 +148,27 @@ func (s *PostService) handleListPost(w http.ResponseWriter, r *http.Request) (in
 		intCursor = 0
 	}
 
+	intLimit, err := strconv.Atoi(limit)
+	if err != nil {
+		intLimit = 10
+	}
+
 	posts := &[]Post{}
 
-	if err := s.Store.ListPost(int64(intCursor), posts); err != nil {
-
+	if err := s.Store.ListPost(int64(intCursor), int32(intLimit), posts); err != nil {
 		log.Println("Error when getting listPost:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
+	meta := struct {
+		Cursor int64 `json:"cursor"`
+	}{
+		Cursor: (*posts)[len(*posts)-1].CreatedAt,
+	}
+
 	resp := library.NewResp("success", map[string]interface{}{
 		"posts": posts,
+		"meta":  meta,
 	})
 
 	library.WriteJson(w, http.StatusOK, resp)
