@@ -80,7 +80,7 @@ func (s *ImageService) handleCreateImage(w http.ResponseWriter, r *http.Request)
 	file, handler, err := r.FormFile("reqImage")
 	if err != nil {
 		log.Println("Error when creating file handler:", err)
-		return http.StatusBadRequest, fmt.Errorf("something went wrong")
+		return http.StatusBadRequest, fmt.Errorf("invalid/missing image")
 	}
 
 	defer file.Close()
