@@ -113,9 +113,9 @@ func (s *UserService) handleGetUserByUsername(w http.ResponseWriter, r *http.Req
 
 func (s *UserService) handleUpdateUserPassword(w http.ResponseWriter, r *http.Request) (int, error) {
 	type changePassReq struct {
-		CurrentPassword    string
-		NewPassword        string
-		ConfirmNewPassword string
+		CurrentPassword    string `json:"currentPassword"`
+		NewPassword        string `json:"newPassword"`
+		ConfirmNewPassword string `json:"confirmNewPassword"`
 	}
 
 	log.Println("hit handle update user password")
