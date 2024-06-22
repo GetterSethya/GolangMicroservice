@@ -17,7 +17,7 @@
                 class="w-[50px] h-[50px] rounded-full object-cover"
             />
             <div class="flex flex-col gap-1">
-                <span class="font-bold">{post.name.length > 20 ? post.name.substring(0, 17) + "..." : name}</span>
+                <span class="font-bold">{post.name.length > 20 ? post.name.substring(0, 17) + "..." : post.name}</span>
                 <span>{post.username}</span>
             </div>
         </div>

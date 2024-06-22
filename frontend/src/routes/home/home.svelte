@@ -1,42 +1,43 @@
 <script lang="ts">
-    import { handleSubmitPost } from "@routes/home/home"
     import Sidebar from "@lib/components/sidebar.svelte"
     import Header from "@lib/components/header.svelte"
-    import { onMount } from "svelte"
+    import { getContext, onMount } from "svelte"
     import { push } from "svelte-spa-router"
     import PostForm from "@lib/components/postForm.svelte"
-    import { appFetch } from "@lib/appFetch"
-    import type { ServerResp, Post } from "@lib/types"
+    import type { Post } from "@lib/types"
     import PostCard from "@lib/components/postCard.svelte"
     import PostCardSkeleton from "@lib/components/postCardSkeleton.svelte"
     import ArrowClockwise from "@lib/components/svg/arrowClockwise.svelte"
+    import type { AppData } from "@lib/data"
+    import { ProgressRadial } from "@skeletonlabs/skeleton"
 
+    const appData = getContext<AppData>("appData")
     let isLoading: boolean = false
     let fetchPostTrigger = false
+    let posts: Post[] = []
+    let meta = {
+        cursor: 0,
+    }
+    let limit = 2
+    let isError = false
 
     onMount(async () => {
         const access = localStorage.getItem("accessToken")
         if (!access) {
             push("/login")
         }
+        await fetchPost()
     })
 
-    async function getPosts(trigger?: boolean) {
+    async function fetchPost() {
         try {
-            const fetchPosts = await appFetch("http://localhost/v1/post/", {
-                method: "GET",
-                headers: new Headers({ Authorization: localStorage.getItem("accessToken") as string }),
-            })
-
-            await new Promise((res) => {
-                setTimeout(() => {
-                    res("done")
-                }, 1000)
-            })
-
-            return fetchPosts.json() as Promise<ServerResp<{ posts: Post[] }>>
+            const { data } = await appData.getAllPost(fetchPostTrigger, meta.cursor, limit)
+            posts = data.posts
+            meta = data.meta
+            isError = false
         } catch (err) {
             console.error(err)
+            isError = true
         }
     }
 </script>
@@ -48,29 +49,26 @@
     <div class="flex flex-col w-full h-full">
         <div class="flex flex-col">
             <Header />
-            <PostForm {isLoading} handleSubmit={handleSubmitPost} />
+            <PostForm
+                {isLoading}
+                callBack={async () => {
+                    await fetchPost()
+                }}
+            />
         </div>
-        <div class="h-[62vh] md:h-full flex overflow-y-scroll">
-            {#await getPosts(fetchPostTrigger)}
+        <div class="h-[62vh] md:h-full flex flex-col overflow-y-scroll">
+            {#if posts.length > 0 && !isError}
                 <div class="w-full flex flex-col divide-y divide-inherit border-surface-700">
-                    <PostCardSkeleton />
-                    <PostCardSkeleton />
-                    <PostCardSkeleton />
+                    {#each posts as post}
+                        <PostCard {post} />
+                    {/each}
                 </div>
-            {:then res}
-                {#if res && res.data}
-                    <div class="w-full flex flex-col divide-y divide-inherit border-surface-700">
-                        {#each res.data.posts as post}
-                            <PostCard {post} />
-                        {/each}
-                    </div>
-                {/if}
-            {:catch _}
+            {:else if isError}
                 <div class="w-1/2 justify-center items-center gap-2.5 flex flex-col m-auto">
                     <span class="text-center">Something went wrong, please try again later</span>
                     <button
-                        on:click={() => {
-                            fetchPostTrigger = !fetchPostTrigger
+                        on:click={async () => {
+                            await fetchPost()
                         }}
                         class="btn fill-white variant-filled-error w-fit m-auto"
                     >
@@ -78,7 +76,45 @@
                         <span>refresh</span>
                     </button>
                 </div>
-            {/await}
+            {:else}
+                <div class="w-full flex flex-col divide-y divide-inherit border-surface-700">
+                    <PostCardSkeleton />
+                    <PostCardSkeleton />
+                    <PostCardSkeleton />
+                </div>
+            {/if}
+            <div class="p-2.5 flex flex-col border-t border-surface-700">
+                <button
+                    on:click={async () => {
+                        isLoading = true
+                        try {
+                            const { data } = await appData.getAllPost(fetchPostTrigger, meta.cursor, limit)
+                            posts = [...posts, ...data.posts]
+                            posts = posts // trigger svelte reactivity
+                            if (data.meta.cursor !== 0) {
+                                meta = data.meta
+                            }
+                            isError = false
+                        } catch (err) {
+                            console.error(err)
+                            isError = true
+                        }
+
+                        isLoading = false
+                    }}
+                    class="text-primary-500 flex flex-row gap-2.5 justify-center items-center"
+                >
+                    {#if isLoading}
+                        <ProgressRadial
+                            width="w-4"
+                            heigth="h-4"
+                            meter="stroke-primary-500"
+                            track="stroke-primary-500/30"
+                        />
+                    {/if}
+                    <span>Load more...</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>

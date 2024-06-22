@@ -1,11 +1,21 @@
 <script lang="ts">
     import Image from "@lib/components/svg/image.svelte"
+    import type { AppData } from "@lib/data"
+    import { handleSubmitPost } from "@routes/home/home"
+    import { getContext } from "svelte"
+    import { getToastStore } from "@skeletonlabs/skeleton"
+    import { push } from "svelte-spa-router"
+
+    const toastStore = getToastStore()
 
     export let isLoading: boolean
-    export let handleSubmit: (e: SubmitEvent) => Promise<void>
+    export let callBack = () => {}
+
+    const appData = getContext<AppData>("appData")
 
     let inputElement: HTMLInputElement
     let imagePreviewElement: HTMLImageElement
+    let formElement: HTMLFormElement
 
     function handlePreview() {
         if (inputElement?.files?.[0]) {
@@ -23,14 +33,16 @@
 </script>
 
 <form
+    bind:this={formElement}
     method="post"
     on:submit|preventDefault={async (e) => {
         isLoading = true
-        try {
-            await handleSubmit(e)
-        } catch (err) {
-            console.error(err)
+        const { success } = await handleSubmitPost(e, appData, toastStore)
+        if (success) {
+            formElement.reset()
         }
+        isLoading = false
+        callBack()
     }}
     class="flex flex-col p-5 border-b border-surface-700"
 >
@@ -38,7 +50,7 @@
         <img alt="" bind:this={imagePreviewElement} class="w-full h-full object-cover" />
     </div>
     <textarea
-        name="postBody"
+        name="reqBody"
         id="postBody"
         class="outline-none bg-transparent border-b border-surface-700 my-2.5"
         rows="4"
@@ -46,14 +58,15 @@
     ></textarea>
     <div class="flex flex-row justify-between w-full items-center">
         <button
-            on:click={() => {
+            type="button"
+            on:click|stopPropagation={() => {
                 inputElement.click()
             }}
             class="bg-surface-800 border border-surface-700 p-2.5 rounded-lg fill-surface-400"
         >
             <Image />
         </button>
-        <input bind:this={inputElement} type="file" name="inputFile" hidden on:input={handlePreview} />
+        <input bind:this={inputElement} type="file" name="reqImage" hidden on:input={handlePreview} />
         <button class="btn variant-filled-primary font-bold">
             <span>Post</span>
         </button>

@@ -4,6 +4,7 @@
     import Login from "@routes/login/login.svelte"
     import Register from "@routes/register/register.svelte"
     import Profile from "@routes/profile/profile.svelte"
+    import AppDataProvider from "@lib/components/appDataProvider.svelte"
     import { Toast, initializeStores } from "@skeletonlabs/skeleton"
 
     initializeStores()
@@ -16,5 +17,7 @@
     }
 </script>
 
-<Toast />
-<Router {routes} />
+<AppDataProvider>
+    <Toast />
+    <Router {routes} />
+</AppDataProvider>
