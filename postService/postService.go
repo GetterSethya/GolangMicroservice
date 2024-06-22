@@ -113,10 +113,18 @@ func (s *PostService) handleListPostByUser(w http.ResponseWriter, r *http.Reques
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
+	var metaCursor int64
+
+	if len(*posts) == 0 {
+		metaCursor = 0
+	} else {
+		metaCursor = (*posts)[len(*posts)-1].CreatedAt
+	}
+
 	meta := struct {
 		Cursor int64 `json:"cursor"`
 	}{
-		Cursor: (*posts)[len(*posts)-1].CreatedAt,
+		Cursor: metaCursor,
 	}
 
 	resp := library.NewResp("success", map[string]interface{}{
@@ -160,10 +168,18 @@ func (s *PostService) handleListPost(w http.ResponseWriter, r *http.Request) (in
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
+	var metaCursor int64
+
+	if len(*posts) == 0 {
+		metaCursor = 0
+	} else {
+		metaCursor = (*posts)[len(*posts)-1].CreatedAt
+	}
+
 	meta := struct {
 		Cursor int64 `json:"cursor"`
 	}{
-		Cursor: (*posts)[len(*posts)-1].CreatedAt,
+		Cursor: metaCursor,
 	}
 
 	resp := library.NewResp("success", map[string]interface{}{

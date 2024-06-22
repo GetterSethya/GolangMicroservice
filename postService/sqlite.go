@@ -295,7 +295,6 @@ func (s *SqliteStorage) DeletePostById(id, userId string) error {
 }
 
 func (s *SqliteStorage) UpdateUserDetail(idUser, profile, name string) error {
-	log.Println(idUser, profile, name)
 	stmt, err := s.db.Prepare(`
         UPDATE posts
         SET
