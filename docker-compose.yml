@@ -151,6 +151,38 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  reply_service1:
+    build:
+      context: .
+      dockerfile: /replyService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 1
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
+      USER_SERVICE_HOSTNAME: "user_service"
+      RABBITMQ_HOSTNAME: "rabbitmq"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  reply_service2:
+    build:
+      context: .
+      dockerfile: /replyService/Dockerfile
+    volumes:
+      - dbStore:/app/data
+    environment:
+      instance: 2
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
+      USER_SERVICE_HOSTNAME: "user_service"
+      RABBITMQ_HOSTNAME: "rabbitmq"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   imageservice:
   dbStore:
