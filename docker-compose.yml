@@ -162,6 +162,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_SECRET: ${REFRESH_SECRET}
       USER_SERVICE_HOSTNAME: "user_service"
+      POST_SERVICE_HOSTNAME: "post_service"
       RABBITMQ_HOSTNAME: "rabbitmq"
     depends_on:
       rabbitmq:
@@ -178,6 +179,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_SECRET: ${REFRESH_SECRET}
       USER_SERVICE_HOSTNAME: "user_service"
+      POST_SERVICE_HOSTNAME: "post_service"
       RABBITMQ_HOSTNAME: "rabbitmq"
     depends_on:
       rabbitmq:

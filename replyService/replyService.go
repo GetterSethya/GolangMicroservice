@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/GetterSethya/library"
+	"github.com/GetterSethya/postProto"
 	"github.com/GetterSethya/userProto"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -17,12 +18,14 @@ import (
 type ReplyService struct {
 	Store                 *SqliteStorage
 	UserServiceGrpcClient userProto.UserClient
+	PostServiceGrpcClient postProto.PostClient
 }
 
-func NewReplyService(store *SqliteStorage, userGrpcClient userProto.UserClient) *ReplyService {
+func NewReplyService(store *SqliteStorage, userGrpcClient userProto.UserClient, postGrpcClient postProto.PostClient) *ReplyService {
 	return &ReplyService{
 		Store:                 store,
 		UserServiceGrpcClient: userGrpcClient,
+		PostServiceGrpcClient: postGrpcClient,
 	}
 }
 
@@ -37,7 +40,7 @@ func (s *ReplyService) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/{replyId}/update", library.CreateHandler(library.JWTMiddleware(s.handleUpdateReply))).Methods(http.MethodPost, http.MethodOptions)
 
 	// delete reply -> http://localhost/v1/reply/{replyId}/delete
-	r.HandleFunc("/{replyId}/update", library.CreateHandler(library.JWTMiddleware(s.handleDeleteReply))).Methods(http.MethodDelete, http.MethodOptions)
+	r.HandleFunc("/{replyId}/delete", library.CreateHandler(library.JWTMiddleware(s.handleDeleteReply))).Methods(http.MethodDelete, http.MethodOptions)
 
 	// get replies by postId -> http://localhost/v1/reply/post/{postId}
 	r.HandleFunc("/post/{postId}", library.CreateHandler(library.JWTMiddleware(s.handleGetReplyByPostId))).Methods(http.MethodGet, http.MethodOptions)
@@ -76,6 +79,7 @@ func (s *ReplyService) handleGetReplyByPostId(w http.ResponseWriter, r *http.Req
 	replies := &[]Reply{}
 
 	if err := s.Store.GetReplyByPostId(postId, int64(intCursor), int32(intLimit), replies); err != nil {
+		log.Println("error when calling GetReplyByPostId:", err)
 		return http.StatusNotFound, fmt.Errorf("reply did not exists")
 	}
 
@@ -130,6 +134,7 @@ func (s *ReplyService) handleGetReplyByParentId(w http.ResponseWriter, r *http.R
 	replies := &[]Reply{}
 
 	if err := s.Store.GetReplyByParentId(parentId, int64(intCursor), int32(intLimit), replies); err != nil {
+		log.Println("error when calling GetReplyByParentId:", err)
 		return http.StatusNotFound, fmt.Errorf("reply did not exists")
 	}
 
@@ -163,6 +168,7 @@ func (s *ReplyService) handleGetReplyByReplyId(w http.ResponseWriter, r *http.Re
 	reply := &Reply{}
 
 	if err := s.Store.GetReplyById(replyId, reply); err != nil {
+		log.Println("error when calling getReplyById:", err)
 		return http.StatusNotFound, fmt.Errorf("reply did not exists")
 	}
 
@@ -180,22 +186,9 @@ func (s *ReplyService) handleDeleteReply(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	replyId := vars["replyId"]
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println("Error when reading body:", err)
-		return http.StatusBadRequest, fmt.Errorf("invalid reply detail")
-	}
-	defer r.Body.Close()
-
-	reqReply := &Reply{}
-
-	if err := json.Unmarshal(body, reqReply); err != nil {
-		log.Println("Error when unmarshaling body:", err)
-		return http.StatusBadRequest, fmt.Errorf("invalid reply detail")
-	}
-
 	replyDb := &Reply{}
 	if err := s.Store.GetReplyById(replyId, replyDb); err != nil {
+		log.Println("error when calling getReplyById:", err)
 		return http.StatusNotFound, fmt.Errorf("reply doesn't exists")
 	}
 
@@ -203,7 +196,24 @@ func (s *ReplyService) handleDeleteReply(w http.ResponseWriter, r *http.Request)
 		return http.StatusForbidden, fmt.Errorf("forbidden")
 	}
 
+	if replyDb.ParentId != nil {
+		if err := s.Store.DecrementReplyChildCount(replyDb.ParentId.(string)); err != nil {
+			log.Println("error when calling DecrementReplyChildCount:", err)
+			return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+		}
+	}
+
 	if err := s.Store.DeleteReply(replyId); err != nil {
+		log.Println("error when calling DeleteReply:", err)
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+	}
+
+	replyCountReq := &postProto.ReplyCountReq{
+		Id: replyDb.IdPost,
+	}
+
+	if _, err := s.PostServiceGrpcClient.DecrementReplyById(r.Context(), replyCountReq); err != nil {
+		log.Println("cannot decrement totalReplies:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
@@ -234,6 +244,7 @@ func (s *ReplyService) handleUpdateReply(w http.ResponseWriter, r *http.Request)
 
 	replyDb := &Reply{}
 	if err := s.Store.GetReplyById(replyId, replyDb); err != nil {
+		log.Println("error when calling GetReplyById:", err)
 		return http.StatusNotFound, fmt.Errorf("reply doesnt exists")
 	}
 
@@ -246,6 +257,7 @@ func (s *ReplyService) handleUpdateReply(w http.ResponseWriter, r *http.Request)
 	///////////////////////////
 
 	if err := s.Store.UpdateReply(replyId, reqReply.Body); err != nil {
+		log.Println("error when calling UpdateReply:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
@@ -281,6 +293,7 @@ func (s *ReplyService) handleCreateChildReply(w http.ResponseWriter, r *http.Req
 
 	userDb, err := s.UserServiceGrpcClient.GetUserById(r.Context(), in)
 	if err != nil {
+		log.Println("error when calling GetUserById:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
@@ -289,6 +302,21 @@ func (s *ReplyService) handleCreateChildReply(w http.ResponseWriter, r *http.Req
 	///////////////////////////
 
 	if err := s.Store.CreateReply(uuid, reply.Body, userId, userDb.Username, userDb.Name, userDb.Profile, reply.IdPost, replyId); err != nil {
+		log.Println("error when creating child reply")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+	}
+
+	if err := s.Store.IncrementReplyChildCount(replyId); err != nil {
+		log.Println("error when incrementing child count")
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+	}
+
+	replyCountReq := &postProto.ReplyCountReq{
+		Id: reply.IdPost,
+	}
+
+	if _, err := s.PostServiceGrpcClient.IncrementReplyById(r.Context(), replyCountReq); err != nil {
+		log.Println("cannot increment totalReplies:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
@@ -318,12 +346,13 @@ func (s *ReplyService) handleCreateReply(w http.ResponseWriter, r *http.Request)
 		return http.StatusBadRequest, fmt.Errorf("invalid reply detail")
 	}
 
-	in := &userProto.GetUserByIdReq{
+	getUserIdReq := &userProto.GetUserByIdReq{
 		Id: userId,
 	}
 
-	userDb, err := s.UserServiceGrpcClient.GetUserById(r.Context(), in)
+	userDb, err := s.UserServiceGrpcClient.GetUserById(r.Context(), getUserIdReq)
 	if err != nil {
+		log.Println("error when calling GetUserById:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 
@@ -332,6 +361,18 @@ func (s *ReplyService) handleCreateReply(w http.ResponseWriter, r *http.Request)
 	///////////////////////////
 
 	if err := s.Store.CreateReply(uuid, reply.Body, userId, userDb.Username, userDb.Name, userDb.Profile, postId, nil); err != nil {
+		log.Println("cannot create new reply:", err)
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+	}
+
+	replyCountReq := &postProto.ReplyCountReq{
+		Id: postId,
+	}
+
+	log.Println(replyCountReq.Id)
+
+	if _, err := s.PostServiceGrpcClient.IncrementReplyById(r.Context(), replyCountReq); err != nil {
+		log.Println("cannot increment totalReplies:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
 

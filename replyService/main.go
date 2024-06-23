@@ -14,8 +14,12 @@ const (
 	PORT                           = ":3005"
 	GRPC_USER_SERVICE_PORT         = ":4002"
 	GRPC_USER_SERVICE_NUM_INSTANCE = 2
+	GRPC_POST_SERVICE_PORT         = ":4004"
+	GRPC_POST_SERVICE_NUM_INSTANCE = 2
 	USER_SCHEME                    = "user"
 	USER_SERVICE_NAME              = "user-service"
+	POST_SCHEME                    = "post"
+	POST_SERVICE_NAME              = "post-service"
 	RABBITMQ_PORT                  = ":5672"
 )
 

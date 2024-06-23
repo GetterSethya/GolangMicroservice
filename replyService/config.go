@@ -6,8 +6,9 @@ import (
 )
 
 type AppConfig struct {
-	UserServiceHostName  string
-	RabbitMQHostname     string
+	UserServiceHostName string
+	PostServiceHostName string
+	RabbitMQHostname    string
 }
 
 func InitConfig() AppConfig {
@@ -17,6 +18,12 @@ func InitConfig() AppConfig {
 		userServiceHostName = "localhost"
 	}
 
+	postServiceHostName := os.Getenv("POST_SERVICE_HOSTNAME")
+	if postServiceHostName == "" {
+		log.Println("POST_SERVICE_HOSTNAME key is not found, fallback to 'localhost'")
+		postServiceHostName = "localhost"
+	}
+
 	rabbitMQHostname := os.Getenv("RABBITMQ_HOSTNAME")
 	if rabbitMQHostname == "" {
 		log.Println("RABBITMQ_HOSTNAME is not found, fallback to localhost")
@@ -24,7 +31,8 @@ func InitConfig() AppConfig {
 	}
 
 	return AppConfig{
-		UserServiceHostName:  userServiceHostName,
-		RabbitMQHostname:     rabbitMQHostname,
+		UserServiceHostName: userServiceHostName,
+		RabbitMQHostname:    rabbitMQHostname,
+		PostServiceHostName: postServiceHostName,
 	}
 }

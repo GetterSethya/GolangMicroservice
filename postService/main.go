@@ -10,27 +10,27 @@ import (
 	"time"
 )
 
-// http port
-const PORT = ":3004"
+const (
+	// http port
+	PORT      = ":3004"
+	GRPC_PORT = ":4004"
 
-// grpc port
-const GRPC_USER_SERVICE_PORT = ":4002"
-const GRPC_USER_SERVICE_NUM_INSTANCE = 2
+	// grpc client port
+	GRPC_USER_SERVICE_PORT          = ":4002"
+	GRPC_USER_SERVICE_NUM_INSTANCE  = 2
+	GRPC_IMAGE_SERVICE_PORT         = ":4001"
+	GRPC_IMAGE_SERVICE_NUM_INSTANCE = 2
 
-const GRPC_IMAGE_SERVICE_PORT = ":4001"
-const GRPC_IMAGE_SERVICE_NUM_INSTANCE = 2
+	USER_SCHEME        = "user"
+	USER_SERVICE_NAME  = "user-service"
+	IMAGE_SCHEME       = "example"
+	IMAGE_SERVICE_NAME = "image-service"
 
-const USER_SCHEME = "user"
-const USER_SERVICE_NAME = "user-service"
-
-const IMAGE_SCHEME = "example"
-const IMAGE_SERVICE_NAME = "image-service"
-
-// rabbitmq port
-const RABBITMQ_PORT = ":5672"
+	// rabbitmq port
+	RABBITMQ_PORT = ":5672"
+)
 
 func main() {
-
 	var wg sync.WaitGroup
 
 	cfg := InitConfig()
@@ -44,12 +44,19 @@ func main() {
 	sqliteStorage.db.SetConnMaxLifetime(5 * time.Minute)
 
 	// http server
-	s := NewServer(PORT, sqliteStorage, cfg)
+	httpServer := NewServer(PORT, sqliteStorage, cfg)
+	grpcServer := NewGrpcServer(GRPC_PORT, sqliteStorage)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		s.Run()
+		httpServer.Run()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		grpcServer.RunGrpc()
 	}()
 
 	// rabbitmq consumer
@@ -66,15 +73,20 @@ func main() {
 	defer shutdownCancel()
 
 	// shutdown http.server
-	if err := s.Server.Shutdown(shutdownCtx); err != nil {
+	if err := httpServer.Server.Shutdown(shutdownCtx); err != nil {
 		log.Println("Error when trying to shutdown http server:", err)
 	} else {
 		log.Println("http server closed")
 	}
 
+	func() {
+		grpcServer.Server.GracefulStop()
+		log.Println("Grpc server closed")
+	}()
+
 	// shutdown rabbitmq
 	rabbitMq.Close()
 
-	//biar main func tidak exit duluan
+	// biar main func tidak exit duluan
 	wg.Wait()
 }

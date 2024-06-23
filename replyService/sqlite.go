@@ -61,6 +61,46 @@ func (s *SqliteStorage) createReplyTable() error {
 	return nil
 }
 
+func (s *SqliteStorage) DecrementReplyChildCount(parentId string) error {
+	query := `
+    UPDATE replies
+    SET totalChild = totalChild - 1
+    WHERE parentId = ?
+    `
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(parentId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) IncrementReplyChildCount(parentId string) error {
+	query := `
+    UPDATE replies
+    SET totalChild = totalChild + 1
+    WHERE parentId = ?
+    `
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(parentId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *SqliteStorage) CreateReply(id, body, idUser, username, name, profile, idPost string, parentId interface{}) error {
 	query := `
     INSERT INTO replies (
@@ -74,7 +114,7 @@ func (s *SqliteStorage) CreateReply(id, body, idUser, username, name, profile, i
         parentId,
         createdAt,
         updatedAt
-    ) VALUES (?,?,?,?,?,?,?,?,?,?)
+    ) VALUES (?,?,?,?,?,?,?,?,?,?);
     `
 	stmt, err := s.db.Prepare(query)
 	if err != nil {

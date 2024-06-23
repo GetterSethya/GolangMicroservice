@@ -5,6 +5,7 @@ go 1.21.1
 require (
 	github.com/GetterSethya/imageProto v0.0.0
 	github.com/GetterSethya/library v1.0.0
+	github.com/GetterSethya/postProto v0.0.0
 	github.com/GetterSethya/userProto v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
@@ -19,7 +20,7 @@ require (
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 )
 
 replace github.com/GetterSethya/library => ../library
@@ -27,3 +28,5 @@ replace github.com/GetterSethya/library => ../library
 replace github.com/GetterSethya/userProto => ../userProto
 
 replace github.com/GetterSethya/imageProto => ../imageProto
+
+replace github.com/GetterSethya/postProto => ../postProto

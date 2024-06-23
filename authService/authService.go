@@ -88,7 +88,7 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 	_, err = s.UserServiceGrpcClient.CreateUser(r.Context(), in)
 	if err != nil {
 		log.Println("Error when calling s.GrpcClient:", err)
-		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+		return http.StatusInternalServerError, fmt.Errorf("username is invalid/already used")
 	}
 
 	resp := library.NewResp("user created!", nil)
@@ -102,7 +102,7 @@ func (s *AuthService) handleLoginAuth(w http.ResponseWriter, r *http.Request) (i
 	ch := make(chan tokenChan)
 	defer close(ch)
 
-	log.Println("hit handle register auth")
+	log.Println("hit handle login auth")
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {

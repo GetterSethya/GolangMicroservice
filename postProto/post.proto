@@ -1,0 +1,16 @@
+syntax = "proto3";
+package postProto;
+option go_package = "github.com/GetterSethya/postProto";
+
+message ReplyCountReq {
+    string id = 1;
+}
+
+message ReplyCountResp {
+    string message = 1;
+}
+
+service Post {
+    rpc IncrementReplyById(ReplyCountReq) returns (ReplyCountResp){}
+    rpc DecrementReplyById(ReplyCountReq) returns (ReplyCountResp){}
+}

@@ -6,11 +6,13 @@ WORKDIR /app
 
 COPY library/ /app/library/
 COPY userProto/ /app/userProto/
+COPY postProto/ /app/postProto/
 COPY replyService/ .
 ENV GOPROXY https://proxy.golang.org
 
 RUN go mod edit -replace=github.com/GetterSethya/library=/app/library
 RUN go mod edit -replace=github.com/GetterSethya/userProto=/app/userProto
+RUN go mod edit -replace=github.com/GetterSethya/postProto=/app/postProto
 RUN go mod tidy
 RUN go mod download
 

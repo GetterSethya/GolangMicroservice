@@ -61,6 +61,44 @@ func (s *SqliteStorage) createPostTable() error {
 	return nil
 }
 
+func (s *SqliteStorage) IncrementTotalReplyById(id string) error {
+	stmt, err := s.db.Prepare(`
+        UPDATE posts
+        SET totalReplies = totalReplies + 1
+        WHERE id = ?
+    `)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) DecrementTotalReplyById(id string) error {
+	stmt, err := s.db.Prepare(`
+        UPDATE posts
+        SET totalReplies = totalReplies - 1
+        WHERE id = ?
+    `)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *SqliteStorage) UpdatePostBody(id, body, userid string) error {
 	stmt, err := s.db.Prepare(`
         UPDATE posts
