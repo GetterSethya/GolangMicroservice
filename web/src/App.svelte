@@ -6,6 +6,7 @@
     import Profile from "@routes/profile/profile.svelte"
     import AppDataProvider from "@lib/components/appDataProvider.svelte"
     import { Toast, initializeStores } from "@skeletonlabs/skeleton"
+    import Drawer from "@lib/components/drawer.svelte"
 
     initializeStores()
 
@@ -19,5 +20,6 @@
 
 <AppDataProvider>
     <Toast />
+    <Drawer />
     <Router {routes} />
 </AppDataProvider>

@@ -1,6 +1,9 @@
-import { AuthError, type AuthResp, type ServerResp } from "@lib/types"
+import { appFetch } from "@lib/appFetch"
+import { localUser } from "@lib/store"
+import { AuthError, type AuthResp, type ServerResp, type User } from "@lib/types"
 import { loginSchema } from "@lib/zod"
 import { push } from "svelte-spa-router"
+import * as jose from "jose"
 
 export async function handleLogin(e: SubmitEvent) {
     const fd = new FormData(e.target as HTMLFormElement)
@@ -29,8 +32,6 @@ export async function handleLogin(e: SubmitEvent) {
     if (res.status != 200) {
         throw new AuthError(resJson.message)
     }
-
-    console.log({ resJson })
 
     // set access token localstorage
     localStorage.setItem("accessToken", resJson.data?.accessToken as string)

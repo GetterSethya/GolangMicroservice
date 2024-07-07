@@ -3,7 +3,7 @@ import * as jose from "jose"
 import type { AuthResp, ServerResp } from "./types"
 import { AuthError } from "@lib/types"
 
-class JWT {
+export class JWT {
     private readonly _access: string = "accessToken"
     private readonly _refresh: string = "refreshToken"
 

@@ -16,7 +16,7 @@
 </script>
 
 <section
-    class="md:h-full justify-evenly h-fit gap-2.5 sm:mt-auto md:gap-5 flex flex-row md:flex-col py-5 fill-surface-400 px-5 md:px-24 md:border-e border-t border-surface-700"
+    class="md:h-full bg-surface-900 z-40 justify-evenly h-fit gap-2.5 sm:mt-auto md:gap-5 flex flex-row md:flex-col py-5 fill-surface-400 px-5 md:px-24 md:border-e border-t border-surface-700"
 >
     <HomeSidebarBtn isActive={true} href="/#/" label="Home">
         <House />

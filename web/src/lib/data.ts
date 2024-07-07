@@ -21,7 +21,10 @@ export class AppData {
             headers: new Headers({ Authorization: localStorage.getItem("accessToken") as string }),
         })
 
-        return fetchPosts.json() as Promise<ServerResp<{ posts: Post[]; meta: { cursor: number } }>>
+        return {
+            res: fetchPosts.json() as Promise<ServerResp<{ posts: Post[]; meta: { cursor: number } }>>,
+            status: fetchPosts.status,
+        }
     }
 
     public async createPost(fd: FormData) {
@@ -30,7 +33,11 @@ export class AppData {
             headers: new Headers({ Authorization: localStorage.getItem("accessToken") as string }),
             body: fd,
         })
-        return fetchPosts.json() as Promise<ServerResp<null>>
+
+        return {
+            res: fetchPosts.json() as Promise<ServerResp<null>>,
+            status: fetchPosts.status,
+        }
     }
 
     public async editPost() {

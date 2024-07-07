@@ -4,12 +4,11 @@
     import { handleSubmitPost } from "@routes/home/home"
     import { getContext } from "svelte"
     import { getToastStore } from "@skeletonlabs/skeleton"
-    import { push } from "svelte-spa-router"
 
     const toastStore = getToastStore()
 
     export let isLoading: boolean
-    export let callBack = () => {}
+    export let onAfterSubmit = () => {}
 
     const appData = getContext<AppData>("appData")
 
@@ -42,7 +41,7 @@
             formElement.reset()
         }
         isLoading = false
-        callBack()
+        onAfterSubmit()
     }}
     class="flex flex-col p-5 border-b border-surface-700"
 >
@@ -53,7 +52,7 @@
         name="reqBody"
         id="postBody"
         class="outline-none bg-transparent border-b border-surface-700 my-2.5"
-        rows="4"
+        rows="3"
         placeholder="Apa yang sedang anda pikirkan"
     ></textarea>
     <div class="flex flex-row justify-between w-full items-center">
