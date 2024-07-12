@@ -32,7 +32,7 @@ func NewUserService(store *SqliteStorage, producer *library.RabbitMq, imageGrpcC
 }
 
 func (s *UserService) RegisterRoutes(r *mux.Router) {
-	// v1/user/id/{id}
+	// v1/user/{id}
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetUserById))).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleDeleteUserById))).Methods(http.MethodDelete, http.MethodOptions)
 
