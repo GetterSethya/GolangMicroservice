@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -25,10 +24,6 @@ func (rb *PostServiceResolverBuilder) Build(target resolver.Target, cc resolver.
 		rb.PostServiceHostname + "2" + GRPC_POST_SERVICE_PORT,
 	}
 
-	for a := range addrs {
-		log.Println("grpc addrs:", a)
-	}
-
 	r := &PostServiceResolver{
 		target: target,
 		cc:     cc,
@@ -44,6 +39,9 @@ func (*PostServiceResolverBuilder) Scheme() string { return POST_SCHEME }
 func (r *PostServiceResolver) start() {
 	addrsStrs := r.addrsStore[r.target.Endpoint()]
 	addrs := make([]resolver.Address, len(addrsStrs))
+	for i, s := range addrsStrs {
+		addrs[i] = resolver.Address{Addr: s}
+	}
 
 	r.cc.UpdateState(resolver.State{Addresses: addrs})
 }

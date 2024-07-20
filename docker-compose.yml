@@ -38,6 +38,9 @@ services:
       - relation_service1
       - relation_service2
 
+      - reply_service1
+      - reply_service2
+
   image_service1:
     build:
       context: .

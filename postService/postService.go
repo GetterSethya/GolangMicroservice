@@ -48,6 +48,16 @@ func (s *PostService) RegisterRoutes(r *mux.Router) {
 
 	// v1/post/{id} --> get post by id
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetPostById))).Methods(http.MethodGet, http.MethodOptions)
+
+	// r.HandleFunc("/health_check", library.CreateHandler(s.handleHealthCheck)).Methods(http.MethodGet)
+}
+
+func (s *PostService) handleHealthCheck(w http.ResponseWriter, r *http.Request) (int, error) {
+    log.Println("hit health_check")
+	resp := library.NewResp("safe and sound", nil)
+	library.WriteJson(w, http.StatusOK, resp)
+
+	return http.StatusOK, nil
 }
 
 func (s *PostService) handleGetPostById(w http.ResponseWriter, r *http.Request) (int, error) {

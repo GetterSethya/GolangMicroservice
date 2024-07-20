@@ -30,7 +30,7 @@ func NewServer(listenAddr string, store *SqliteStorage, cfg AppConfig) *AppServe
 	if err != nil {
 		log.Fatalf("Cannot connect to user Grpc server: %v", err)
 	} else {
-		log.Println("create connection to user Grpc server:", userServiceGrpcConn.Target())
+		log.Println("create connection to user Grpc server:", userServiceGrpcConn.Target(),userServiceGrpcConn.GetState().String())
 	}
 
 	resolver.Register(postRB)

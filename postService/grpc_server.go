@@ -22,6 +22,7 @@ func NewGrpcServer(listenAddr string, store *SqliteStorage) *GrpcServer {
 	if err != nil {
 		log.Fatalf("Failed to start grpc postService server:%v", err)
 	}
+	log.Println("newGrpcServer post service on:", listenAddr)
 
 	return &GrpcServer{
 		ListenAddr:  listenAddr,
