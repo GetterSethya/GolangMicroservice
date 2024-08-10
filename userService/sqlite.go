@@ -310,6 +310,8 @@ func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) err
         username,
         name,
         profile,
+        totalFollower,
+        totalFollowing,
         createdAt,
         updatedAt 
         FROM users WHERE username = ? AND deletedAt IS NULL`)
@@ -324,6 +326,8 @@ func (s *SqliteStorage) GetUserByUsername(username string, user *ReturnUser) err
 		&user.Username,
 		&user.Name,
 		&user.Profile,
+		&user.TotalFollower,
+		&user.TotalFollowing,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	); err != nil {
@@ -340,6 +344,8 @@ func (s *SqliteStorage) GetUserById(id string, user *ReturnUser) error {
         username,
         name,
         profile,
+        totalFollower,
+        totalFollowing,
         createdAt,
         updatedAt
         FROM users WHERE id = ?`)
@@ -354,6 +360,8 @@ func (s *SqliteStorage) GetUserById(id string, user *ReturnUser) error {
 		&user.Username,
 		&user.Name,
 		&user.Profile,
+		&user.TotalFollower,
+		&user.TotalFollowing,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	); err != nil {

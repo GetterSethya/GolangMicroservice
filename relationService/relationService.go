@@ -138,7 +138,9 @@ func (s *RelationService) handleIsFollowing(w http.ResponseWriter, r *http.Reque
 	followerId := library.GetUserIdFromJWT(r)
 
 	if targetId == followerId {
-		return http.StatusBadRequest, fmt.Errorf("bad request")
+		resp := library.NewResp("success", map[string]interface{}{"isFollowing": false})
+		library.WriteJson(w, http.StatusOK, resp)
+		return http.StatusOK, nil
 	}
 
 	isFollowing, err := s.Store.IsFollowing(targetId, followerId)
@@ -159,7 +161,9 @@ func (s *RelationService) handleIsFollower(w http.ResponseWriter, r *http.Reques
 	targetId := library.GetUserIdFromJWT(r)
 
 	if targetId == followerId {
-		return http.StatusBadRequest, fmt.Errorf("bad request")
+		resp := library.NewResp("success", map[string]interface{}{"isFollower": false})
+		library.WriteJson(w, http.StatusOK, resp)
+		return http.StatusOK, nil
 	}
 
 	isFollowing, err := s.Store.IsFollowing(targetId, followerId)

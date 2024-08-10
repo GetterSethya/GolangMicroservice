@@ -10,6 +10,7 @@ type Post struct {
 	Profile      string `json:"profile"`
 	TotalLikes   int64  `json:"totalLikes"`
 	TotalReplies int64  `json:"totalReplies"`
+	ISLiked      bool   `json:"isLiked"`
 
 	CreatedAt int64       `json:"createdAt"`
 	UpdatedAt int64       `json:"updatedAt"`

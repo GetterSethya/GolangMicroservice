@@ -31,7 +31,7 @@ func NewUserService(store *SqliteStorage, userGrpcClient userProto.UserClient, i
 }
 
 func (s *PostService) RegisterRoutes(r *mux.Router) {
-	// v1/post/create --> bikin post
+	// v1/post/ --> bikin post
 	r.HandleFunc("/", library.CreateHandler(library.JWTMiddleware(s.handleCreatePost))).Methods(http.MethodPost, http.MethodOptions)
 
 	// v1/post/ --> delete post (soft delete, deletedAt nya diisi unixepoch) !Penting nanti di cek dulu apakah idUser dari jwt sama dengan idUser yang ada didalam post
@@ -49,13 +49,123 @@ func (s *PostService) RegisterRoutes(r *mux.Router) {
 	// v1/post/{id} --> get post by id
 	r.HandleFunc("/{id}", library.CreateHandler(library.JWTMiddleware(s.handleGetPostById))).Methods(http.MethodGet, http.MethodOptions)
 
-	// r.HandleFunc("/health_check", library.CreateHandler(s.handleHealthCheck)).Methods(http.MethodGet)
+	// v1/{id}/like --> create like
+	r.HandleFunc("/{id}/like", library.CreateHandler(library.JWTMiddleware(s.handleCreateLike))).Methods(http.MethodGet, http.MethodOptions)
+
+	// v1/{id}/cancel-like --> delete like
+	r.HandleFunc("/{id}/cancel-like", library.CreateHandler(library.JWTMiddleware(s.handleDeleteLike))).Methods(http.MethodGet, http.MethodOptions)
+
+	// v1/post/like/{userId} --> list liked by user
+	r.HandleFunc("/post/like/{userId}", library.CreateHandler(library.JWTMiddleware(s.handleListPostLikedByUser))).Methods(http.MethodGet, http.MethodOptions)
 }
 
-func (s *PostService) handleHealthCheck(w http.ResponseWriter, r *http.Request) (int, error) {
-    log.Println("hit health_check")
-	resp := library.NewResp("safe and sound", nil)
+func (s *PostService) handleListPostLikedByUser(w http.ResponseWriter, r *http.Request) (int, error) {
+	log.Println("hit handle list post liked by user")
+	vars := mux.Vars(r)
+	urlQuery := r.URL.Query()
+	limit := urlQuery.Get("limit")
+	cursor := urlQuery.Get("cursor")
+	userId := vars["userId"]
+
+	if limit == "" {
+		limit = "10"
+	}
+
+	if cursor == "" {
+		cursor = "0"
+	}
+
+	intCursor, err := strconv.Atoi(cursor)
+	if err != nil {
+		intCursor = 0
+	}
+
+	intLimit, err := strconv.Atoi(limit)
+	if err != nil {
+		intLimit = 10
+	}
+
+	posts := &[]Post{}
+
+	if err := s.Store.ListLikedByUser(int64(intCursor), userId, int32(intLimit), posts); err != nil {
+
+		log.Println("Error when getting list liked posts:", err)
+		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
+	}
+
+	var metaCursor int64
+
+	if len(*posts) == 0 {
+		metaCursor = 0
+	} else {
+		metaCursor = (*posts)[len(*posts)-1].CreatedAt
+	}
+
+	meta := struct {
+		Cursor int64 `json:"cursor"`
+	}{
+		Cursor: metaCursor,
+	}
+
+	resp := library.NewResp("success", map[string]interface{}{
+		"posts": posts,
+		"meta":  meta,
+	})
+
 	library.WriteJson(w, http.StatusOK, resp)
+
+	if err := uuid.Validate(userId); err != nil {
+		log.Println("Invalid user uuid url")
+		return http.StatusBadRequest, fmt.Errorf("user didnot exists")
+	}
+
+	return http.StatusOK, nil
+}
+
+func (s *PostService) handleCreateLike(w http.ResponseWriter, r *http.Request) (int, error) {
+	log.Println("hit handle create like")
+	vars := mux.Vars(r)
+	postId := vars["id"]
+	userId := library.GetUserIdFromJWT(r)
+
+	if err := uuid.Validate(postId); err != nil {
+		log.Println("Invalid post uuid url")
+		return http.StatusBadRequest, fmt.Errorf("post didnot exists")
+	}
+
+	likeId := uuid.NewString()
+
+	if err := s.Store.CreateLike(likeId, userId, postId); err != nil {
+		log.Println("Error when creating like", err)
+		return http.StatusBadRequest, fmt.Errorf("error when creating like")
+	}
+
+	resp := library.NewResp("success", nil)
+
+	library.WriteJson(w, http.StatusCreated, resp)
+
+	return http.StatusCreated, nil
+}
+
+func (s *PostService) handleDeleteLike(w http.ResponseWriter, r *http.Request) (int, error) {
+	log.Println("hit handle delete like")
+	vars := mux.Vars(r)
+	postId := vars["id"]
+	userId := library.GetUserIdFromJWT(r)
+
+	if err := uuid.Validate(postId); err != nil {
+		log.Println("Invalid post uuid url")
+		return http.StatusBadRequest, fmt.Errorf("post didnot exists")
+	}
+
+	if err := s.Store.DeleteLike(postId, userId); err != nil {
+		log.Println("Error when deleting like", err)
+		return http.StatusBadRequest, fmt.Errorf("error when deleting like")
+	}
+
+	resp := library.NewResp("success", nil)
+
+	library.WriteJson(w, http.StatusCreated, resp)
 
 	return http.StatusOK, nil
 }
@@ -64,6 +174,7 @@ func (s *PostService) handleGetPostById(w http.ResponseWriter, r *http.Request) 
 	log.Println("hit handle get post by id")
 	vars := mux.Vars(r)
 	postId := vars["id"]
+	currentUser := library.GetUserIdFromJWT(r)
 
 	if err := uuid.Validate(postId); err != nil {
 		log.Println("Invalid post uuid url")
@@ -72,7 +183,7 @@ func (s *PostService) handleGetPostById(w http.ResponseWriter, r *http.Request) 
 
 	post := &Post{}
 
-	if err := s.Store.GetPostById(postId, post); err != nil {
+	if err := s.Store.GetPostById(currentUser, postId, post); err != nil {
 		log.Println("getPostById err:", err)
 		if err == sql.ErrNoRows {
 			return http.StatusNotFound, fmt.Errorf("Post didnot exists")
@@ -153,6 +264,7 @@ func (s *PostService) handleListPost(w http.ResponseWriter, r *http.Request) (in
 	urlQuery := r.URL.Query()
 	cursor := urlQuery.Get("cursor")
 	limit := urlQuery.Get("limit")
+	currentUser := library.GetUserIdFromJWT(r)
 
 	if cursor == "" {
 		cursor = "0"
@@ -173,7 +285,7 @@ func (s *PostService) handleListPost(w http.ResponseWriter, r *http.Request) (in
 
 	posts := &[]Post{}
 
-	if err := s.Store.ListPost(int64(intCursor), int32(intLimit), posts); err != nil {
+	if err := s.Store.ListPost(currentUser, int64(intCursor), int32(intLimit), posts); err != nil {
 		log.Println("Error when getting listPost:", err)
 		return http.StatusInternalServerError, fmt.Errorf("something went wrong")
 	}
@@ -223,7 +335,7 @@ func (s *PostService) handleUpdatePost(w http.ResponseWriter, r *http.Request) (
 	}
 
 	fetchPost := &Post{}
-	if err := s.Store.GetPostById(postId, fetchPost); err != nil {
+	if err := s.Store.GetPostById(userId, postId, fetchPost); err != nil {
 		log.Println("getPostById err:", err)
 		if err == sql.ErrNoRows {
 			return http.StatusNotFound, fmt.Errorf("Post didnot exists")
@@ -261,7 +373,7 @@ func (s *PostService) handleDeletePost(w http.ResponseWriter, r *http.Request) (
 	userId := library.GetUserIdFromJWT(r)
 	post := &Post{}
 
-	err := s.Store.GetPostById(postId, post)
+	err := s.Store.GetPostById(userId, postId, post)
 	if err != nil {
 		log.Println("getPostById err:", err)
 		if err == sql.ErrNoRows {

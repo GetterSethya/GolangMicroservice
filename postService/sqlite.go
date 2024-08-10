@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -35,6 +36,29 @@ func (s *SqliteStorage) Init() {
 	if err := s.createPostTable(); err != nil {
 		log.Fatal(err)
 	}
+
+	if err := s.createLikeTable(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (s *SqliteStorage) createLikeTable() error {
+	_, err := s.db.Exec(`
+        CREATE TABLE IF NOT EXISTS likes (
+            id TEXT PRIMARY KEY,
+            idUser TEXT NOT NULL,
+            idPost TEXT NOT NULL,
+            
+            createdAt INTEGER NOT NULL,
+            updatedAt INTEGER NOT NULL,
+            deletedAt INTEGER, 
+            UNIQUE(idPost, IdUser)
+        )`)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *SqliteStorage) createPostTable() error {
@@ -56,6 +80,221 @@ func (s *SqliteStorage) createPostTable() error {
         )`)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// create like
+func (s *SqliteStorage) CreateLike(id string, userId string, postId string) error {
+	unixEpoch := time.Now().Unix()
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	var testSelect interface{}
+
+	stmt1, err := tx.Prepare(`
+        SELECT id FROM posts WHERE id = ?
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt1.Close()
+
+	if err := stmt1.QueryRow(postId).Scan(&testSelect); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if testSelect == nil {
+		tx.Rollback()
+		return fmt.Errorf("post doesnt exists")
+	}
+
+	stmt2, err := tx.Prepare(`
+        INSERT INTO likes (id, idUser, idPost, createdAt, updatedAt)
+        VALUES (?,?,?,?,?)
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt2.Close()
+
+	if _, err := stmt2.Exec(id, userId, postId, unixEpoch, unixEpoch); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	stmt3, err := tx.Prepare(`
+        UPDATE posts
+        SET totalLikes = totalLikes + 1
+        WHERE id = ?
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt3.Close()
+
+	if _, err := stmt3.Exec(postId); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// delete like
+func (s *SqliteStorage) DeleteLike(idPost string, idUser string) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	var testSelect interface{}
+
+	stmt1, err := tx.Prepare(`
+        SELECT id
+        FROM likes
+        WHERE idPost = ? AND idUser = ?
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt1.Close()
+
+	if err := stmt1.QueryRow(idPost, idUser).Scan(&testSelect); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if testSelect == nil {
+		tx.Rollback()
+		return fmt.Errorf("like already deleted")
+	}
+
+	stmt2, err := tx.Prepare(`
+        DELETE FROM likes
+        WHERE idPost = ? AND idUser = ?`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt2.Close()
+
+	if _, err := stmt2.Exec( idPost, idUser); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	stmt3, err := tx.Prepare(`
+        UPDATE posts
+        SET totalLikes = totalLikes - 1
+        WHERE id = ?
+    `)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt3.Close()
+
+	if _, err := stmt3.Exec(idPost); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// list post liked by user
+func (s *SqliteStorage) ListLikedByUser(cursor int64, userId string, limit int32, posts *[]Post) error {
+	stmt, err := s.db.Prepare(`
+        SELECT
+            p.id AS postId,
+            p.image,
+            p.body,
+            p.idUser,
+            p.username,
+            p.name,
+            p.profile,
+            p.totalLikes,
+            p.totalReplies,
+            p.createdAt,
+            p.updatedAt,
+            CASE
+                WHEN l.id IS NOT NULL THEN TRUE
+                ELSE FALSE
+            END AS isLiked
+        FROM
+            posts p
+        LEFT JOIN
+            likes l
+        ON
+            p.id = l.idPost AND l.idUser = ?
+        WHERE
+            l.idUser = ?
+            AND p.deletedAt IS NULL
+            AND p.createdAt < ?
+        ORDER BY
+            p.createdAt DESC
+        LIMIT ?
+    `)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	if cursor == 0 {
+		cursor = 922337203685477
+	}
+
+	rows, err := stmt.Query(userId, userId, cursor, limit)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var post Post
+		err := rows.Scan(
+			&post.Id,
+			&post.Image,
+			&post.Body,
+			&post.IdUser,
+			&post.Username,
+			&post.Name,
+			&post.Profile,
+			&post.TotalLikes,
+			&post.TotalReplies,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			&post.ISLiked,
+		)
+		if err != nil {
+			return err
+		}
+		*posts = append(*posts, post)
+
 	}
 
 	return nil
@@ -128,25 +367,33 @@ func (s *SqliteStorage) UpdatePostBody(id, body, userid string) error {
 func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, limit int32, posts *[]Post) error {
 	queryStr := `
         SELECT
-            id,
-            image,
-            body,
-            idUser,
-            username,
-            name,
-            profile,
-            totalLikes,
-            totalReplies,
-            createdAt,
-            updatedAt
+            p.id AS postId,
+            p.image,
+            p.body,
+            p.idUser,
+            p.username,
+            p.name,
+            p.profile,
+            p.totalLikes,
+            p.totalReplies,
+            p.createdAt,
+            p.updatedAt,
+            CASE
+                WHEN l.id IS NOT NULL THEN TRUE
+                ELSE FALSE
+            END AS isLiked
         FROM
-            posts 
+            posts p
+        LEFT JOIN
+            likes l
+        ON
+            p.id = l.idPost AND l.idUser = ?
         WHERE
-            idUser = ?
-            AND deletedAt IS NULL
-            AND createdAt < ?
+            p.idUser = ?
+            AND p.deletedAt IS NULL
+            AND p.createdAt < ?
         ORDER BY
-            createdAt DESC
+            p.createdAt DESC
         LIMIT ?`
 
 	stmt, err := s.db.Prepare(queryStr)
@@ -161,7 +408,7 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, limit int32,
 		cursor = 922337203685477
 	}
 
-	rows, err := stmt.Query(userId, cursor, limit)
+	rows, err := stmt.Query(userId, userId, cursor, limit)
 	if err != nil {
 		return err
 	}
@@ -182,6 +429,7 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, limit int32,
 			&post.TotalReplies,
 			&post.CreatedAt,
 			&post.UpdatedAt,
+			&post.ISLiked,
 		)
 		if err != nil {
 			return err
@@ -194,27 +442,35 @@ func (s *SqliteStorage) ListPostByUser(cursor int64, userId string, limit int32,
 }
 
 // listPosts --> nampilin list post
-func (s *SqliteStorage) ListPost(cursor int64, limit int32, posts *[]Post) error {
+func (s *SqliteStorage) ListPost(currentUserId string, cursor int64, limit int32, posts *[]Post) error {
 	queryStr := `
         SELECT
-            id,
-            image,
-            body,
-            idUser,
-            username,
-            name,
-            profile,
-            totalLikes,
-            totalReplies,
-            createdAt,
-            updatedAt
+            p.id AS postId,
+            p.image,
+            p.body,
+            p.idUser,
+            p.username,
+            p.name,
+            p.profile,
+            p.totalLikes,
+            p.totalReplies,
+            p.createdAt,
+            p.updatedAt,
+            CASE
+                WHEN l.id IS NOT NULL THEN TRUE
+                ELSE FALSE
+            END AS isLiked
         FROM
-            posts 
+            posts p
+        LEFT JOIN
+            likes l
+        ON
+            p.id = l.idPost AND l.idUser = ?
         WHERE
-            deletedAt IS NULL
-            AND createdAt < ?
+            p.deletedAt IS NULL
+            AND p.createdAt < ?
         ORDER BY
-            createdAt DESC
+            p.createdAt DESC
         LIMIT ?
         `
 	stmt, err := s.db.Prepare(queryStr)
@@ -227,7 +483,7 @@ func (s *SqliteStorage) ListPost(cursor int64, limit int32, posts *[]Post) error
 		cursor = 922337203685477
 	}
 
-	rows, err := stmt.Query(cursor, limit)
+	rows, err := stmt.Query(currentUserId, cursor, limit)
 	if err != nil {
 		return err
 	}
@@ -248,6 +504,7 @@ func (s *SqliteStorage) ListPost(cursor int64, limit int32, posts *[]Post) error
 			&post.TotalReplies,
 			&post.CreatedAt,
 			&post.UpdatedAt,
+			&post.ISLiked,
 		)
 		if err != nil {
 			return err
@@ -260,25 +517,33 @@ func (s *SqliteStorage) ListPost(cursor int64, limit int32, posts *[]Post) error
 }
 
 // getPostById --> nampilin satu post
-func (s *SqliteStorage) GetPostById(id string, post *Post) error {
+func (s *SqliteStorage) GetPostById(currentUserId string, id string, post *Post) error {
 	stmt, err := s.db.Prepare(`
         SELECT
-            id,
-            image,
-            body,
-            idUser,
-            username,
-            name,
-            profile,
-            totalLikes,
-            totalReplies,
-            createdAt,
-            updatedAt
+            p.id as postId,
+            p.image,
+            p.body,
+            p.idUser,
+            p.username,
+            p.name,
+            p.profile,
+            p.totalLikes,
+            p.totalReplies,
+            p.createdAt,
+            p.updatedAt,
+            CASE
+                WHEN l.id IS NOT NULL THEN TRUE
+                ELSE FALSE
+            END AS isLiked
         FROM
-            posts 
+            posts p
+        LEFT JOIN
+            likes l
+        ON
+            p.id = l.idPost AND l.idUser = ?
         WHERE
-            id = ?
-            AND deletedAt IS NULL
+            postId = ?
+            AND p.deletedAt IS NULL
         LIMIT 1
         `)
 	if err != nil {
@@ -287,7 +552,7 @@ func (s *SqliteStorage) GetPostById(id string, post *Post) error {
 
 	defer stmt.Close()
 
-	if err := stmt.QueryRow(id).Scan(
+	if err := stmt.QueryRow(currentUserId, id).Scan(
 		&post.Id,
 		&post.Image,
 		&post.Body,
@@ -299,6 +564,7 @@ func (s *SqliteStorage) GetPostById(id string, post *Post) error {
 		&post.TotalReplies,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.ISLiked,
 	); err != nil {
 		return err
 	}
