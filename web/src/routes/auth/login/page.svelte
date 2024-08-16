@@ -1,9 +1,10 @@
 <script lang="ts">
     import Input from "@lib/components/Input.svelte"
-    import { ProgressRadial, getToastStore, type ToastSettings } from "@skeletonlabs/skeleton"
-    import { handleRegister } from "./register"
-    import { AuthError } from "@lib/types"
+    import { ProgressRadial, type ToastSettings } from "@skeletonlabs/skeleton"
     import { ZodError } from "zod"
+    import { AuthError } from "@lib/types"
+    import { handleLogin } from "@routes/auth/login/login"
+    import { getToastStore } from "@skeletonlabs/skeleton"
     let isLoading = false
     let errMessage: string[] = []
 
@@ -22,17 +23,18 @@
     }
 </script>
 
-<div class="w-full h-full flex flex-col text-surface-200">
+<div class="w-full md:w-1/2 md:mx-auto h-full flex flex-col text-surface-200">
     <div class="flex flex-col m-auto w-full lg:w-1/2">
         <div class="flex flex-col gap-2.5 w-fit p-5">
-            <h1 class="h1">Create your account</h1>
+            <h1 class="h1">Welcome back</h1>
+            <span class="text-surface-400">Please enter your username & password to continue</span>
         </div>
         <form
             method="post"
             on:submit|preventDefault={async (e) => {
                 isLoading = true
                 try {
-                    await handleRegister(e)
+                    await handleLogin(e)
                 } catch (err) {
                     console.error(err)
                     switch (true) {
@@ -49,6 +51,7 @@
                             break
                     }
                 }
+
                 isLoading = false
             }}
             class="p-5 flex flex-col gap-5"
@@ -61,20 +64,11 @@
                 type={"text"}
                 minLength="6"
             />
-            <Input required={true} disabled={isLoading} label={"Name"} placeholder="enter your name" type={"text"} />
             <Input
                 required={true}
                 disabled={isLoading}
                 label={"Password"}
                 placeholder="enter your password"
-                type={"password"}
-                minLength="8"
-            />
-            <Input
-                required={true}
-                disabled={isLoading}
-                label={"Confirm password"}
-                placeholder="confirm your password"
                 type={"password"}
                 minLength="8"
             />
@@ -88,12 +82,12 @@
                         strokeLinecap="butt"
                     />
                 {/if}
-                <span>Register</span>
+                <span>Login</span>
             </button>
         </form>
         <div class="p-5 text-surface-400">
-            <span>Already have an account? </span>
-            <a class="text-primary-700" href="/#/login">Login</a>
+            <span>Dont have an account yet? </span>
+            <a href="#/auth/register" class="text-primary-700">Register</a>
         </div>
     </div>
 </div>

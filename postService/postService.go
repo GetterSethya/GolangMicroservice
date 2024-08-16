@@ -165,7 +165,7 @@ func (s *PostService) handleDeleteLike(w http.ResponseWriter, r *http.Request) (
 
 	resp := library.NewResp("success", nil)
 
-	library.WriteJson(w, http.StatusCreated, resp)
+	library.WriteJson(w, http.StatusOK, resp)
 
 	return http.StatusOK, nil
 }

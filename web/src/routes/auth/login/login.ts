@@ -1,9 +1,6 @@
-import { appFetch } from "@lib/appFetch"
-import { localUser } from "@lib/store"
 import { AuthError, type AuthResp, type ServerResp, type User } from "@lib/types"
 import { loginSchema } from "@lib/zod"
-import { push } from "svelte-spa-router"
-import * as jose from "jose"
+import { replace } from "svelte-spa-router"
 
 export async function handleLogin(e: SubmitEvent) {
     const fd = new FormData(e.target as HTMLFormElement)
@@ -40,8 +37,5 @@ export async function handleLogin(e: SubmitEvent) {
     localStorage.setItem("refreshToken", resJson.data?.refreshToken as string)
 
     // redirect ke halaman index
-    push("/")
-}
-async function simulateLatency(delay: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, delay))
+    replace("/home/")
 }

@@ -5,9 +5,14 @@
     import Search from "@lib/components/svg/search.svelte"
     import Power from "@lib/components/svg/power.svelte"
     import { push } from "svelte-spa-router"
+    import { getContext } from "svelte"
+    import type { User } from "@lib/types"
+    import type { Writable } from "svelte/store"
+    import { location } from "svelte-spa-router"
+
+    const localUserStore = getContext<Writable<User | null>>("localUserStore")
 
     function handleLogout() {
-        console.log("click")
         localStorage.removeItem("accessToken")
         localStorage.removeItem("refreshToken")
 
@@ -16,15 +21,19 @@
 </script>
 
 <section
-    class="md:h-full bg-surface-900 z-40 justify-evenly h-fit gap-2.5 sm:mt-auto md:gap-5 flex flex-row md:flex-col py-5 fill-surface-400 px-5 md:px-24 md:border-e border-t border-surface-700"
+    class="w-full md:w-fit md:h-full bg-surface-900 z-40 justify-evenly h-fit gap-2.5 sm:mt-auto md:gap-5 flex flex-row md:flex-col py-5 fill-surface-400 px-5 md:px-12 md:border-e border-t border-surface-700"
 >
-    <HomeSidebarBtn isActive={true} href="/#/" label="Home">
+    <HomeSidebarBtn isActive={$location.startsWith("/home")} href="/#/" label="Home">
         <House />
     </HomeSidebarBtn>
-    <HomeSidebarBtn href="/#/profile" label="Profile">
+    <HomeSidebarBtn
+        isActive={$location.startsWith("/profile")}
+        href="/#/profile/{$localUserStore?.username}"
+        label="Profile"
+    >
         <Person />
     </HomeSidebarBtn>
-    <HomeSidebarBtn href="/#/search" label="Search">
+    <HomeSidebarBtn isActive={$location.startsWith("/search")} href="/#/search" label="Search">
         <Search />
     </HomeSidebarBtn>
 
@@ -41,8 +50,7 @@
             on:click={handleLogout}
         >
             <Power />
-
-            <span class="font-bold text-lg hidden md:block"> Logout</span>
+            <span class="font-bold text-lg hidden md:block">Logout</span>
         </button>
     </div>
 </section>

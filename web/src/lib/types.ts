@@ -1,16 +1,14 @@
-import type { ComponentType } from "svelte"
+import type { twFractions, twSize } from "@ui/types"
+import type { ComponentProps, ComponentType, SvelteComponent } from "svelte"
 
-export type drawerData = {
-    icon: {
-        component: ComponentType
-        class?: string
-        fill: string
-        fillClass?: string
+export type drawerData<T extends SvelteComponent = SvelteComponent> = {
+    component: ComponentType
+    props?: ComponentProps<T>
+    config?: {
+        height?: `h-${(typeof twSize)[number]}` | `h-${(typeof twFractions)[number]}`
     }
-    label: string
-    labelClass?: string
-    onClick: () => void
 }
+
 export type ServerResp<T> = {
     message: string
     data: T
@@ -31,16 +29,36 @@ export type Post = {
     body: string
     totalReplies: number
     totalLikes: number
+    isLiked:boolean
+
+    createdAt: number
+    updatedAt: number
+}
+
+export type Reply = {
+    id: string
+    body: string
+    idPost: string
+    idUser: string
+    name: string
+    username: string
+    profile: string
+    totalChild: number
+    parentId: string | null
+
+    createdAt: number
+    updatedAt: number
 }
 
 export type User = {
     id: string
     name: string
     username: string
+    profile: string
     createdAt: string
     updatedAt: string
     totalFollower: number
-    totlaFollowing: number
+    totalFollowing: number
 }
 
 export class AuthError extends Error {

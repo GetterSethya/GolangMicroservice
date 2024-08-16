@@ -6,8 +6,6 @@ export async function handleRegister(e: SubmitEvent) {
     const fd = new FormData(e.target as HTMLFormElement)
     const { username, name, password, confirmpassword } = Object.fromEntries(fd) as Record<string, string>
 
-    console.log({ username, name, password, confirmpassword })
-
     if (password !== confirmpassword) {
         throw new AuthError("Password missmatch")
     }
@@ -32,8 +30,5 @@ export async function handleRegister(e: SubmitEvent) {
     }
 
     // redirect ke halaman login
-    push("/login")
-}
-async function simulateLatency(delay: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, delay))
+    push("/auth/login")
 }
