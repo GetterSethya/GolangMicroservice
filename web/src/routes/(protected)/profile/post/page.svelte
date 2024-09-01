@@ -1,19 +1,13 @@
 <script lang="ts">
     import { AppData } from "@lib/data"
-    import { FetchError, type Post, type User } from "@lib/types"
+    import { FetchError, type Post } from "@lib/types"
     import { ProgressRadial } from "@skeletonlabs/skeleton"
-    import { getContext, onMount, setContext } from "svelte"
-    import type { Writable } from "svelte/store"
+    import { getContext, onMount } from "svelte"
     import { Post as PostComponent } from "@ui/content/"
     import * as Container from "@ui/container"
     import * as Button from "@ui/button"
     import LoadingSkeleton from "@lib/components/home/loadingSkeleton.svelte"
     import { profileStore as profile } from "@lib/store"
-
-    const localUser = getContext<Writable<User | null>>("localUserStore")
-    $:if ($localUser) {
-        setContext("localUserId", $localUser?.id)
-    }
 
     const appData = getContext<AppData>("appData")
     let fetchPostTrigger = false
@@ -96,8 +90,6 @@
             }
         }
     }
-
-    $: console.log({ posts }, { errorState })
 </script>
 
 {#if posts.length > 0 && !errorState.isError}

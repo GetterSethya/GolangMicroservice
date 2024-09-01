@@ -4,6 +4,7 @@
     export let profileUrl: string
     export let width = "w-[50px]"
     export let height = "h-[50px]"
+
 </script>
 
 <img

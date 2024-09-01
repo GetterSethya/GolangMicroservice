@@ -4,7 +4,7 @@
     const token = localStorage.getItem("accessToken")
 
     if (token) {
-        replace("/home")
+        replace("/app/home")
     } else {
         replace("/auth/login")
     }

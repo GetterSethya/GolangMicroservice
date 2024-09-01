@@ -7,26 +7,28 @@
     import { UserRoundCog, UserRoundMinusIcon, UserRoundPlusIcon } from "lucide-svelte"
     import { location, pop, replace } from "svelte-spa-router"
     import { getContext, onMount } from "svelte"
-    import { type Writable } from "svelte/store"
-    import { AuthError, type User } from "@lib/types"
+    import { AuthError } from "@lib/types"
     import type { AppData } from "@lib/data"
     import { getToastStore, type ToastSettings } from "@skeletonlabs/skeleton"
-    import {profileStore as profile} from "@lib/store"
+    import { profileStore as profile } from "@lib/store"
+    import { UserRepository } from "@lib/repository/user"
 
     export let prefix: string
     export let params: { username: string | null }
 
     const toastStore = getToastStore()
-    const localUser = getContext<Writable<User | null>>("localUserStore")
     const appData = getContext<AppData>("appData")
+    const userRepo = UserRepository.getCtx()
+    const localUser = userRepo.getLocalUserCtx()
+
     let isFollower = false
     let isFollowing = false
 
     onMount(async () => {
         let userId = ""
         try {
-            const { res, status } = await appData.getUserByUsername(params.username as string)
-            if (status === 200) {
+            const { res, status } = await userRepo.getUserByUsername({ username: params.username as string })
+            if (status === 200 && res.data?.user) {
                 profile.set(res.data.user)
                 userId = res.data.user.id
             }
@@ -77,7 +79,7 @@
     >
         <Container.Flex direction="row" gap={2.5} alignItems="center">
             <Profile width="w-[80px]" height="h-[80px]" profileUrl={$profile.profile} />
-            <Container.Flex direction="col" gap={1} class="text-3xl text-surface-200">
+            <Container.Flex direction="col" gap={1} class="text-xl text-surface-200">
                 <span class=" line-clamp-1">
                     <Name name={$profile.name} />
                 </span>
@@ -108,7 +110,7 @@
                     </Container.Flex>
                 </Container.Anchor>
             </Container.Flex>
-            {#if $localUser?.username === params.username}
+            {#if $localUser && $localUser.username === params.username}
                 <Button.Root variant="ghost" bg="warning" class="text-surface-200" on:click={() => {}}>
                     <svelte:fragment slot="leftElement">
                         <UserRoundCog size={18} />
@@ -138,7 +140,7 @@
             <Button.Root
                 class="w-full text-surface-200 font-bold"
                 on:click={() => {
-                    replace(`/profile/${params.username}/post/`)
+                    replace(`/app/profile/${params.username}/post/`)
                 }}
             >
                 <span class="mx-auto" class:text-primary-500={$location.startsWith(`/profile/${params.username}/post`)}
@@ -150,7 +152,7 @@
             <Button.Root
                 class="w-full text-surface-200 font-bold"
                 on:click={() => {
-                    replace(`/profile/${params.username}/like/`)
+                    replace(`/app/profile/${params.username}/like/`)
                 }}
             >
                 <span class="mx-auto" class:text-primary-500={$location.startsWith(`/profile/${params.username}/like`)}

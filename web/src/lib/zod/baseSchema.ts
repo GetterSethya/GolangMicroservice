@@ -9,7 +9,7 @@ export const username = z
     .string({ message: "Username is not a string" })
     .min(6, { message: "Username is too short, minimum username is 6 character long" })
     .max(50, { message: "Username is too long, maximum username is 50 character long" })
-    .regex(/^[a-zA-Z0-9]+$/, { message: "username cannot contain special character" })
+    .regex(/^[a-zA-Z0-9]+$/, { message: "Username cannot contain special character" })
 
 export const password = z
     .string({ message: "Password is not a string" })

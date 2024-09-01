@@ -1,21 +1,19 @@
 <script lang="ts">
     import Image from "@lib/components/svg/image.svelte"
-    import type { AppData } from "@lib/data"
-    import { handleSubmitPost } from "@routes/home/handler"
-    import { getContext } from "svelte"
+    import { handleSubmitPost } from "@routes/(protected)/home/handler"
     import { getToastStore } from "@skeletonlabs/skeleton"
     import * as Button from "@ui/button"
     import { Pen } from "lucide-svelte"
     import Box from "@ui/container/box.svelte"
     import Flex from "@ui/container/flex.svelte"
     import X from "@lib/components/svg/x.svelte"
+    import { PostRepository } from "@lib/repository/post"
 
     const toastStore = getToastStore()
+    const postRepo = PostRepository.getCtx()
 
     export let isLoading: boolean
     export let onAfterSubmit = () => {}
-
-    const appData = getContext<AppData>("appData")
 
     let inputElement: HTMLInputElement
     let imagePreviewElement: HTMLImageElement
@@ -44,12 +42,17 @@
         method="post"
         on:submit|preventDefault={async (e) => {
             isLoading = true
-            const { success } = await handleSubmitPost(e, appData, toastStore)
+            const { success } = await handleSubmitPost(e, postRepo, toastStore)
             if (success) {
                 formElement.reset()
             }
             isLoading = false
             onAfterSubmit()
+            inputElement.value = ""
+            inputElement.files = null
+            imagePreviewElement.src = ""
+            imagePreviewElement.removeAttribute("src")
+            showImage = false
         }}
         class="flex w-full flex-col p-5 border-b border-surface-700"
     >

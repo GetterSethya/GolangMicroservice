@@ -1,13 +1,14 @@
-import type { AppData } from "@lib/data"
+import type { PostRepository } from "@lib/repository/post"
 import { FetchError } from "@lib/types"
 import type { ToastSettings, ToastStore } from "@skeletonlabs/skeleton"
 
-export async function handleSubmitPost(e: SubmitEvent, appData: AppData, toastStore: ToastStore) {
-    const fd = new FormData(e.target as HTMLFormElement)
+export async function handleSubmitPost(e: SubmitEvent, postRepo: PostRepository, toastStore: ToastStore) {
+    const form = e.target as HTMLFormElement
+    const fd = new FormData(form)
 
     try {
-        const { res, status } = await appData.createPost(fd)
-        const { message } = await res
+        const { res, status } = await postRepo.createPost({ fd })
+        const { message } = res
 
         if (status !== 201) {
             throw new FetchError(message)

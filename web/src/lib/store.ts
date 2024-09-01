@@ -1,5 +1,6 @@
 import { writable } from "svelte/store"
-import type { Post, User, drawerData } from "./types"
+import type { Post, drawerData } from "./types"
+import type { User } from "./repository/user"
 
 export const localUser = writable<User | undefined>(undefined)
 export const drawerStore = writable(false)

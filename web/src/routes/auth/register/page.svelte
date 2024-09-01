@@ -1,25 +1,54 @@
 <script lang="ts">
-    import Input from "@lib/components/Input.svelte"
+    import * as Input from "@ui/input"
     import { ProgressRadial, getToastStore, type ToastSettings } from "@skeletonlabs/skeleton"
     import { handleRegister } from "./register"
     import { AuthError } from "@lib/types"
-    import { ZodError } from "zod"
-    let isLoading = false
-    let errMessage: string[] = []
+    import { z, ZodError } from "zod"
+    import { AuthRepository } from "@lib/repository/auth"
+    import { createForm } from "felte"
+    import { validator } from "@felte/validator-zod"
+    import { registerSchema } from "@lib/zod"
+    import { reporter } from "@felte/reporter-svelte"
 
     const toastStore = getToastStore()
+    const authRepo = AuthRepository.getCtx()
 
-    $: if (errMessage.length > 0) {
-        errMessage.map((d) => {
-            const t: ToastSettings = {
-                message: d,
-                background: "bg-error-500",
-                timeout: 3500,
+    const { form, isSubmitting } = createForm<z.infer<typeof registerSchema>>({
+        onSubmit: async (data) => {
+            let errMessage: string[] = []
+            try {
+                await handleRegister(authRepo, data)
+            } catch (err) {
+                console.error(err)
+                switch (true) {
+                    case err instanceof ZodError:
+                        errMessage = err.errors.map((e) => e.message)
+                        break
+
+                    case err instanceof AuthError:
+                        errMessage = [err.message]
+                        break
+
+                    default:
+                        errMessage = ["Something went wrong"]
+                        break
+                }
+            } finally {
+                if (errMessage.length > 0) {
+                    errMessage.map((d) => {
+                        const t: ToastSettings = {
+                            message: d,
+                            background: "bg-error-500",
+                            timeout: 3500,
+                        }
+
+                        toastStore.trigger(t)
+                    })
+                }
             }
-
-            toastStore.trigger(t)
-        })
-    }
+        },
+        extend: [validator({ schema: registerSchema }), reporter],
+    })
 </script>
 
 <div class="w-full md:w-1/2 md:mx-auto h-full flex flex-col text-surface-200">
@@ -27,59 +56,40 @@
         <div class="flex flex-col gap-2.5 w-fit p-5">
             <h1 class="h1">Create your account</h1>
         </div>
-        <form
-            method="post"
-            on:submit|preventDefault={async (e) => {
-                isLoading = true
-                try {
-                    await handleRegister(e)
-                } catch (err) {
-                    console.error(err)
-                    switch (true) {
-                        case err instanceof ZodError:
-                            errMessage = err.errors.map((e) => e.message)
-                            break
-
-                        case err instanceof AuthError:
-                            errMessage = [err.message]
-                            break
-
-                        default:
-                            errMessage = ["Something went wrong"]
-                            break
-                    }
-                }
-                isLoading = false
-            }}
-            class="p-5 flex flex-col gap-5"
-        >
-            <Input
+        <form use:form method="post" class="p-5 flex flex-col gap-5">
+            <Input.Text
                 required={true}
-                disabled={isLoading}
+                disabled={$isSubmitting}
                 label={"Username"}
+                name="username"
                 placeholder="enter your username"
-                type={"text"}
-                minLength="6"
             />
-            <Input required={true} disabled={isLoading} label={"Name"} placeholder="enter your name" type={"text"} />
-            <Input
+            <Input.Text
                 required={true}
-                disabled={isLoading}
+                disabled={$isSubmitting}
+                label={"Name"}
+                name="name"
+                placeholder="enter your name"
+                type={"text"}
+            />
+            <Input.Password
+                disabled={$isSubmitting}
+                required={true}
+                name="password"
                 label={"Password"}
                 placeholder="enter your password"
                 type={"password"}
-                minLength="8"
             />
-            <Input
+            <Input.Password
+                disabled={$isSubmitting}
                 required={true}
-                disabled={isLoading}
                 label={"Confirm password"}
                 placeholder="confirm your password"
+                name="confirmPassword"
                 type={"password"}
-                minLength="8"
             />
-            <button disabled={isLoading} class="btn font-bold variant-filled-primary">
-                {#if isLoading}
+            <button disabled={$isSubmitting} class="btn font-bold variant-filled-primary">
+                {#if $isSubmitting}
                     <ProgressRadial
                         stroke={100}
                         width="w-5"

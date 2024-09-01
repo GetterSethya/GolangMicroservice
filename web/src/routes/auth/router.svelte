@@ -1,6 +1,9 @@
 <script lang="ts">
+    import { AuthRepository } from "@lib/repository/auth"
     import Router, { replace, type RouteDefinition } from "svelte-spa-router"
     import wrap from "svelte-spa-router/wrap"
+
+    AuthRepository.setCtx()
 
     const prefix = "/auth"
     const routes: RouteDefinition = {

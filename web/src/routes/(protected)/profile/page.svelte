@@ -7,7 +7,7 @@
 
     export let params: { username: string }
 
-    const prefix = "/profile/" + params.username
+    const prefix = "/app/profile/" + params.username
     const routes: RouteDefinition = {
         "/post": wrap({
             component: ProfilePostPage,

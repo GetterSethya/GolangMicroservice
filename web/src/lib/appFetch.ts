@@ -2,6 +2,7 @@ import { push } from "svelte-spa-router"
 import * as jose from "jose"
 import type { AuthResp, ServerResp } from "./types"
 import { AuthError } from "@lib/types"
+import { AuthRepository } from "./repository/auth"
 
 export class JWT {
     private readonly _access: string = "accessToken"
@@ -63,12 +64,10 @@ export class JWT {
     }
 
     public async getNewJWT() {
-        const fetchNewJWT = await fetch("http://localhost/v1/auth/refresh", {
-            method: "POST",
-            body: JSON.stringify({ refreshToken: this.refresh }),
-        })
+        const authRepo = new AuthRepository()
+        const { status, res } = await authRepo.refresh()
 
-        if (fetchNewJWT.status !== 200) {
+        if (!res.data || status !== 200) {
             this.deleteToken()
             push("/login")
 
@@ -76,9 +75,8 @@ export class JWT {
         }
 
         //jika token baru berhasil di fetch, set token lagi
-        const resp = (await fetchNewJWT.json()) as ServerResp<AuthResp>
-        this.access = resp.data.accessToken
-        this.refresh = resp.data.refreshToken
+        this.access = res.data.accessToken
+        this.refresh = res.data.refreshToken
     }
 }
 

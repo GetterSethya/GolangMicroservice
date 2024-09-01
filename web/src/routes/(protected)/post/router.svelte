@@ -3,10 +3,14 @@
     import wrap from "svelte-spa-router/wrap"
     import Layout from "@routes/layout/Baselayout.svelte"
 
-    const prefix = "/post"
+    const prefix = "/app/post"
     const routes: RouteDefinition = {
         "/:id": wrap({
-            asyncComponent: () => import("@routes/post/page.svelte"),
+            asyncComponent: () => import("@routes/(protected)/post/page.svelte"),
+            conditions:()=>{
+                console.log("hit /:id")
+                return true
+            }
         }),
     }
 </script>

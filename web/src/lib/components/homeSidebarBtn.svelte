@@ -20,5 +20,5 @@
     py-2.5 hover:text-primary-500 hover:fill-primary-500 w-fit rounded-lg items-center hover:bg-surface-800"
 >
     <slot />
-    <span class="font-bold text-lg hidden md:block"> {label} </span>
+    <span class="font-medium hidden md:block"> {label} </span>
 </a>

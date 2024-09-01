@@ -5,12 +5,11 @@
     import Search from "@lib/components/svg/search.svelte"
     import Power from "@lib/components/svg/power.svelte"
     import { push } from "svelte-spa-router"
-    import { getContext } from "svelte"
-    import type { User } from "@lib/types"
-    import type { Writable } from "svelte/store"
     import { location } from "svelte-spa-router"
+    import { UserRepository } from "@lib/repository/user"
 
-    const localUserStore = getContext<Writable<User | null>>("localUserStore")
+    const userRepo = UserRepository.getCtx()
+    const localUser = userRepo.getLocalUserCtx()
 
     function handleLogout() {
         localStorage.removeItem("accessToken")
@@ -23,17 +22,19 @@
 <section
     class="w-full md:w-fit md:h-full bg-surface-900 z-40 justify-evenly h-fit gap-2.5 sm:mt-auto md:gap-5 flex flex-row md:flex-col py-5 fill-surface-400 px-5 md:px-12 md:border-e border-t border-surface-700"
 >
-    <HomeSidebarBtn isActive={$location.startsWith("/home")} href="/#/" label="Home">
+    <HomeSidebarBtn isActive={$location.startsWith("/app/home")} href="/#/app/home" label="Home">
         <House />
     </HomeSidebarBtn>
-    <HomeSidebarBtn
-        isActive={$location.startsWith("/profile")}
-        href="/#/profile/{$localUserStore?.username}"
-        label="Profile"
-    >
-        <Person />
-    </HomeSidebarBtn>
-    <HomeSidebarBtn isActive={$location.startsWith("/search")} href="/#/search" label="Search">
+    {#if $localUser}
+        <HomeSidebarBtn
+            isActive={$location.startsWith("/app/profile")}
+            href="/#/app/profile/{$localUser.username}"
+            label="Profile"
+        >
+            <Person />
+        </HomeSidebarBtn>
+    {/if}
+    <HomeSidebarBtn isActive={$location.startsWith("/app/search")} href="/#/app/search" label="Search">
         <Search />
     </HomeSidebarBtn>
 
