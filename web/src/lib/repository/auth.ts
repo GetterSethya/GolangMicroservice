@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { APIResponseSchema, type APIResponse } from "./base"
-import { API_URL } from "@lib/constant"
+import { API_URL } from "@/constant"
 import { getContext, setContext } from "svelte"
 
 export const AuthSchema = z.object({

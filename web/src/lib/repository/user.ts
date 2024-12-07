@@ -1,6 +1,6 @@
 import { getContext, setContext } from "svelte"
-import { appFetch } from "@lib/appFetch"
-import { API_URL } from "@lib/constant"
+import { appFetch } from "@/appFetch"
+import { API_URL } from "@/constant"
 import * as Jose from "jose"
 import { z } from "zod"
 import { APIResponseSchema, BaseSchema, type APIResponse, type Base, type Init } from "./base"

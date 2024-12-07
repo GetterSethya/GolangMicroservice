@@ -65,6 +65,10 @@ func (s *AuthService) handleRegisterAuth(w http.ResponseWriter, r *http.Request)
 		return http.StatusBadRequest, fmt.Errorf("invalid user detail")
 	}
 
+	if user.ConfirmPassword != user.Password {
+		return http.StatusBadRequest, fmt.Errorf("invalid confirm password")
+	}
+
 	/////////////////////////////
 	//TODO validasi input user//
 	///////////////////////////

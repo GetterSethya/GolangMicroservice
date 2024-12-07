@@ -1,5 +1,5 @@
-import type { ServerResp } from "@lib/types"
 import { z } from "zod"
+import type { ServerResp } from "@/types"
 
 export const BaseSchema = z.object({
     id: z.string(),

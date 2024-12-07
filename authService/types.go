@@ -4,6 +4,7 @@ type RegisterUser struct {
 	Username string `json:"username"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
+	ConfirmPassword string `json:"confirmPassword"`
 }
 
 type LoginUser struct {

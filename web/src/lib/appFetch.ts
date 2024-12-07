@@ -1,8 +1,12 @@
-import { push } from "svelte-spa-router"
-import * as jose from "jose"
-import type { AuthResp, ServerResp } from "./types"
-import { AuthError } from "@lib/types"
+import { goto } from "$app/navigation"
 import { AuthRepository } from "./repository/auth"
+import { AuthError } from "./types"
+import * as Jose from "jose"
+
+type GetNewJWTArgs= {
+    onFailed:()=>void
+}
+
 
 export class JWT {
     private readonly _access: string = "accessToken"
@@ -47,7 +51,7 @@ export class JWT {
         const access = this.access
         if (!access) return false
 
-        const decodedAccess = jose.decodeJwt(access)
+        const decodedAccess = Jose.decodeJwt(access)
         if (!decodedAccess.exp) return false
 
         return decodedAccess.exp > new Date().getTime() / 1000
@@ -57,19 +61,22 @@ export class JWT {
         const refresh = this.refresh
         if (!refresh) return false
 
-        const decodedRefresh = jose.decodeJwt(refresh)
+        const decodedRefresh = Jose.decodeJwt(refresh)
         if (!decodedRefresh.exp) return false
 
         return decodedRefresh.exp > new Date().getTime() / 1000
     }
 
-    public async getNewJWT() {
+    public async getNewJWT(args?:Partial<GetNewJWTArgs>) {
         const authRepo = new AuthRepository()
         const { status, res } = await authRepo.refresh()
 
         if (!res.data || status !== 200) {
             this.deleteToken()
-            push("/login")
+            if (args && args.onFailed) {
+                args.onFailed()
+                goto("/login")
+            }
 
             throw new AuthError("invalid token")
         }
@@ -87,7 +94,7 @@ export async function appFetch(input: URL | RequestInfo, init?: RequestInit | un
         console.log("token tidak valid, mencoba refresh jwt")
         if (!jwt.validateRefresh()) {
             jwt.deleteToken()
-            push("/login")
+            goto("/login")
 
             throw new AuthError("invalid token")
         }
